@@ -1,0 +1,4 @@
+fastapi>=0.100.0
+uvicorn>=0.20.0
+UnityPy>=1.25.2
+pillow>=10.0.0
