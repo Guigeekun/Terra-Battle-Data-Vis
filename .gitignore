@@ -16,3 +16,4 @@ dist/
 *.jsonl
 __pycache__/
 *.py[cod]
+config.json

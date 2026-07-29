@@ -1,4 +1,4 @@
-# Terra Battle Level Editor
+# Terra Battle Data Viz
 
 An interactive web-based database viewer and level editor for *Terra Battle*, designed to work alongside project **Liminal Gate**. 
 
@@ -75,9 +75,35 @@ To run the full extraction and parsing pipeline, place your game APK under `loca
 # Extract asset databases
 python scripts/extract_everything.py
 
-# Decompile chapter scripts and generate wave coordinates database
+# Decompile chapter scripts and generate wave coordinates database (Chapters 1-7)
 python scripts/decompile_and_parse_all.py
 ```
+
+### Native Stage Extraction (Chapters 8 to 42)
+
+For Chapters 8-42, battle scripts are compiled directly into the ARM64 C++ binary (`libil2cpp.so`). Reconstructing these layouts requires binary disassembly analysis:
+
+#### Prerequisites
+1. **`llvm-objdump`**: Must be installed and available on your system `PATH`.
+2. **`Il2CppDumper`**: Used to generate the `dump.cs` file from your APK's `libil2cpp.so` and `global-metadata.dat`. `Il2CppDumper.exe` should be available on your `PATH`.
+
+#### Configuration
+A `config.json` file is located in the root of the project to manage paths (defaults to `./local-input/`):
+* `dump_cs_path`: Path to the generated `dump.cs`.
+* `apk_path`: Path to your Terra Battle APK.
+* `lib_path`: Path to extract `libil2cpp.so` to.
+* `objdump_cmd`: Name of the objdump command (defaults to `llvm-objdump`).
+* `stages_layout_path`: Output path to update `StagesLayout.json`.
+
+Just rename `config.json.example` to `config.json` and update the paths to match your system configuration.
+
+#### Extraction Execution
+To extract native coordinates for Chapters 8+ and merge them into your layout database:
+```bash
+# Disassemble and extract Chapter 8-42 battle layouts
+python scripts/extract_native_stages.py
+```
+
 
 ---
 

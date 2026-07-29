@@ -190,6 +190,50 @@ def extract_text_assets(env: Any, output_dir: Path) -> None:
                 print(f"  TextAsset {obj.path_id}: ERROR - {error}")
 
 
+def extract_dlc_text_assets(scenario_dir: Path, output_dir: Path) -> None:
+    """Scan DLC .bin files in Scenario directory for any TextAssets (like Chapter8.luac)."""
+    if not scenario_dir.exists():
+        return
+        
+    text_dir = output_dir / "text_assets"
+    text_dir.mkdir(parents=True, exist_ok=True)
+    
+    bin_files = list(scenario_dir.glob("*.bin"))
+    if not bin_files:
+        return
+        
+    print(f"  Scanning {len(bin_files)} Scenario DLC files for TextAssets...")
+    extracted_count = 0
+    for bin_path in bin_files:
+        try:
+            env = UnityPy.load(str(bin_path))
+            for obj in env.objects:
+                if obj.type.name == "TextAsset":
+                    data = obj.read()
+                    name = data.m_Name
+                    if not (name.startswith("Chapter") or name.startswith("Init_") or "Battle" in name):
+                        continue
+                    
+                    content = get_text_asset_script_bytes(obj)
+                    is_lua = content[:5] == b"\x1dMOON"
+                    if is_lua:
+                        (text_dir / f"{name}.luac").write_bytes(content)
+                        extracted_count += 1
+                    else:
+                        try:
+                            text = content.decode("utf-8")
+                            (text_dir / f"{name}.txt").write_text(text, encoding="utf-8")
+                            extracted_count += 1
+                        except UnicodeDecodeError:
+                            (text_dir / f"{name}.bin").write_bytes(content)
+                            extracted_count += 1
+        except Exception:
+            pass
+            
+    if extracted_count > 0:
+        print(f"  Extracted {extracted_count} TextAsset(s) from Scenario DLC files.")
+
+
 def parse_string_set_manually(raw: bytes, inverse_table: bytes) -> dict[str, Any]:
     """Manually parse the StringSet object to bypass TypeTree generator bugs."""
     offset = 32 # Skip MonoBehaviour header
@@ -368,6 +412,10 @@ def main() -> int:
         # Step 4: TextAssets
         print("[4/5] Extracting Lua scripts and TextAssets...")
         extract_text_assets(env, output_dir)
+        
+        # Scan Scenario directory for DLC chapter scripts
+        scenario_dir = apk_path.parent / "resources" / "data_u2017" / "android" / "Scenario"
+        extract_dlc_text_assets(scenario_dir, output_dir)
         print()
 
         # Step 5: MonoBehaviours (game data)
