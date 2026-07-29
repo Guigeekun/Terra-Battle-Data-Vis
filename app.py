@@ -9,12 +9,15 @@ from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
+import io
+
 # Initialize FastAPI App using lifespan context manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Load databases before launching web server
     print("Loading game data databases...")
     load_databases()
+    load_inverse_table()
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -28,6 +31,51 @@ LOCAL_INPUT_DIR = os.path.join("local-input", "resources", "data_u2017", "androi
 
 # Cached Databases
 gamedata = {}
+INVERSE_TABLE = None
+
+def load_inverse_table():
+    global INVERSE_TABLE
+    apk_path = os.path.join("local-input", "terra-battle-5.5.7-170.apk")
+    if os.path.exists("config.json"):
+        try:
+            with open("config.json", "r", encoding="utf-8") as f:
+                config = json.load(f)
+                apk_path = config.get("apk_path", apk_path)
+        except Exception:
+            pass
+            
+    if os.path.exists(apk_path):
+        try:
+            import zipfile
+            with zipfile.ZipFile(apk_path) as z:
+                metadata = z.read("assets/bin/Data/Managed/Metadata/global-metadata.dat")
+                INVERSE_TABLE = metadata[0x601CAD : 0x601CAD + 256]
+                print("Loaded ENCA decryption table from APK metadata.")
+        except Exception as e:
+            print(f"Warning: Could not load decryption table from APK metadata: {e}")
+
+MAGIC = b"ENCA"
+
+def _calc_index(index: int, size: int) -> int:
+    low = index & 0xFF
+    if (index >> 8) != ((size - 1) >> 8):
+        low ^= 0xFF
+    return (index & ~0xFF) | low
+
+def _transform_byte(value: int) -> int:
+    return ((value >> 4) | ((value & 0x0F) << 4)) ^ 0xFF
+
+def decrypt_enca(source: bytes) -> bytes:
+    if not source.startswith(MAGIC) or INVERSE_TABLE is None:
+        return source
+    size = len(source) - len(MAGIC)
+    if size == 0:
+        return b""
+    plain = bytearray(size)
+    for source_index, value in enumerate(source[len(MAGIC):]):
+        plain[_calc_index(size - 1 - source_index, size)] = _transform_byte(INVERSE_TABLE[value])
+    return bytes(plain)
+
 
 def load_databases():
     """Load all game databases from JSON files."""
@@ -318,6 +366,50 @@ def get_assets_inventory():
                 
     return inventory
 
+@app.get('/api/assets/image')
+def serve_image(path: str):
+    """
+    On-the-fly decryption and image extraction endpoint for Illust, Pieces, etc.
+    """
+    normalized_path = os.path.normpath(path).replace("\\", "/")
+    
+    # Validation to prevent path traversal outside local-input
+    if not (normalized_path.startswith("local-input/resources/data_u2017/android/") or 
+            normalized_path.startswith("local-input/resources/data/")):
+        raise HTTPException(status_code=403, detail="Access denied")
+        
+    if not os.path.exists(normalized_path):
+        raise HTTPException(status_code=404, detail="File not found")
+        
+    try:
+        with open(normalized_path, "rb") as f:
+            file_bytes = f.read()
+            
+        # Decrypt if encrypted with ENCA
+        decrypted_bytes = decrypt_enca(file_bytes)
+        
+        # Load with UnityPy
+        import UnityPy
+        env = UnityPy.load(decrypted_bytes)
+        
+        # Find first Texture2D or Sprite
+        for obj in env.objects:
+            if obj.type.name in ('Texture2D', 'Sprite'):
+                data = obj.read()
+                img = data.image
+                
+                # Stream as PNG
+                buf = io.BytesIO()
+                img.save(buf, format="PNG")
+                png_bytes = buf.getvalue()
+                
+                return Response(content=png_bytes, media_type="image/png")
+                
+        raise HTTPException(status_code=404, detail="No image asset found in bundle")
+    except Exception as e:
+        print(f"Error serving image asset {path}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Web App Page Router
 @app.get('/')
 def index_page():
@@ -326,7 +418,7 @@ def index_page():
 
 def open_browser():
     """Open user's default browser to local server port."""
-    webbrowser.open_new("http://127.0.0.1:5000/")
+    webbrowser.open_new("http://127.0.0.1:5001/")
 
 if __name__ == "__main__":
     # Automatically open browser in 1.5 seconds
@@ -334,4 +426,4 @@ if __name__ == "__main__":
     
     # Run local web server
     print("Starting FastAPI web server...")
-    uvicorn.run(app, host="127.0.0.1", port=5000)
+    uvicorn.run(app, host="127.0.0.1", port=5001)

@@ -31,7 +31,8 @@ const rarityLabels = {
     4: 'A Class',
     5: 'S Class',
     6: 'SS Class',
-    7: 'Z Class'
+    7: 'Z Class',
+    8: 'Λ Class'
 };
 
 // Species translations helper
@@ -108,6 +109,11 @@ const els = {
     modalJobProfile: document.getElementById('modal-job-profile'),
     modalJobPiecePath: document.getElementById('modal-job-piece-path'),
     modalJobIllustPath: document.getElementById('modal-job-illust-path'),
+    modalJobPieceImg: document.getElementById('modal-job-piece-img'),
+    modalJobIllustImg: document.getElementById('modal-job-illust-img'),
+    lightboxModal: document.getElementById('lightbox-modal'),
+    lightboxClose: document.getElementById('lightbox-close'),
+    lightboxImg: document.getElementById('lightbox-img'),
     modalJobHP: document.getElementById('modal-job-hp'),
     modalJobATK: document.getElementById('modal-job-atk'),
     modalJobDEF: document.getElementById('modal-job-def'),
@@ -167,6 +173,28 @@ function registerEventListeners() {
     els.modalCloseBtn.addEventListener('click', closeModal);
     els.charModal.addEventListener('click', (e) => {
         if (e.target === els.charModal) closeModal();
+    });
+
+    // Lightbox Image Preview Events
+    const openLightbox = (src) => {
+        if (!src) return;
+        els.lightboxImg.src = src;
+        els.lightboxModal.classList.remove('hidden');
+    };
+
+    const closeLightbox = () => {
+        els.lightboxModal.classList.add('hidden');
+        els.lightboxImg.src = '';
+    };
+
+    els.modalJobPieceImg.addEventListener('click', () => openLightbox(els.modalJobPieceImg.src));
+    els.modalJobIllustImg.addEventListener('click', () => openLightbox(els.modalJobIllustImg.src));
+
+    els.lightboxClose.addEventListener('click', closeLightbox);
+    els.lightboxModal.addEventListener('click', (e) => {
+        if (e.target === els.lightboxModal || e.target === els.lightboxClose || e.target.tagName === 'I') {
+            closeLightbox();
+        }
     });
     
     // Character Modal Job Tabs Toggle
@@ -371,7 +399,7 @@ function renderCharacters() {
         const speciesMatches = species === '' || char.Species == species;
         
         // Match Rarity Filter
-        const rarityMatches = rarity === '' || char.Rarity == rarity;
+        const rarityMatches = rarity === '' || char.rarity == rarity;
         
         return nameMatches && speciesMatches && rarityMatches;
     });
@@ -384,11 +412,19 @@ function renderCharacters() {
     filtered.forEach(char => {
         const card = document.createElement('div');
         card.className = 'card-item';
+        
+        const firstJob = char.JobsInfo && char.JobsInfo.length > 0 ? char.JobsInfo[0] : null;
+        const pieceUrl = firstJob && firstJob.piece_file ? `/api/assets/image?path=${encodeURIComponent(firstJob.piece_file)}` : null;
+        
+        const cardImageHtml = pieceUrl ? 
+            `<div class="card-image" style="width: 100%; background-color: rgba(0, 0, 0, 0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; border: 1px solid var(--border-color); overflow: hidden;">` +
+                `<img src="${pieceUrl}" alt="Icon" style="width: 100%; height: 100%; object-fit: cover;">` +
+            `</div>` : 
+            `<div class="card-image-placeholder"><i class="fa-solid fa-user-shield"></i></div>`;
+            
         card.innerHTML = `
-            <span class="card-badge badge-rarity">${rarityLabels[char.Rarity] || 'Class ' + char.Rarity}</span>
-            <div class="card-image-placeholder">
-                <i class="fa-solid fa-user-shield"></i>
-            </div>
+            <span class="card-badge badge-rarity">${rarityLabels[char.rarity] || 'Class ' + char.rarity}</span>
+            ${cardImageHtml}
             <h4 class="card-name">${getLocalizedString(char.NameString)}</h4>
             <div class="card-meta">
                 <span><i class="fa-solid fa-venus-mars"></i> ${char.Gender === 1 ? 'Male' : (char.Gender === 2 ? 'Female' : 'Unknown')}</span>
@@ -415,7 +451,7 @@ function renderBuddies() {
     const filtered = state.buddies.filter(buddy => {
         const nameMatches = getLocalizedString(buddy.NameString).toLowerCase().includes(query) ||
                             getLocalizedString(buddy.DescString).toLowerCase().includes(query);
-        const rarityMatches = rarity === '' || buddy.Rarity == rarity;
+        const rarityMatches = rarity === '' || buddy.rarity == rarity;
         return nameMatches && rarityMatches;
     });
     
@@ -427,11 +463,18 @@ function renderBuddies() {
     filtered.forEach(buddy => {
         const card = document.createElement('div');
         card.className = 'card-item';
+        
+        const thumbUrl = buddy.thumb_file ? `/api/assets/image?path=${encodeURIComponent(buddy.thumb_file)}` : null;
+        
+        const cardImageHtml = thumbUrl ? 
+            `<div class="card-image" style="width: 100%; background-color: rgba(0, 0, 0, 0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; border: 1px solid var(--border-color); overflow: hidden;">` +
+                `<img src="${thumbUrl}" alt="Companion" style="width: 100%; height: 100%; object-fit: cover;">` +
+            `</div>` : 
+            `<div class="card-image-placeholder"><i class="fa-solid fa-paw"></i></div>`;
+            
         card.innerHTML = `
-            <span class="card-badge badge-rarity">${rarityLabels[buddy.Rarity] || 'Class ' + buddy.Rarity}</span>
-            <div class="card-image-placeholder" style="height: 100px;">
-                <i class="fa-solid fa-paw"></i>
-            </div>
+            <span class="card-badge badge-rarity">${rarityLabels[buddy.rarity] || 'Class ' + buddy.rarity}</span>
+            ${cardImageHtml}
             <h4 class="card-name">${getLocalizedString(buddy.NameString)}</h4>
             <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 12px; height: 3.2em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
                 ${getLocalizedString(buddy.DescString)}
@@ -915,7 +958,7 @@ function openCharacterModal(char) {
     els.modalCharSpecies.textContent = speciesTrans ? (speciesTrans[state.lang] || speciesTrans['en']) : 'Unknown';
     els.modalCharName.textContent = getLocalizedString(char.NameString);
     els.modalCharGender.innerHTML = `<i class="fa-solid fa-venus-mars"></i> Gender: ${char.Gender === 1 ? 'Male' : (char.Gender === 2 ? 'Female' : 'Unknown')}`;
-    els.modalCharRarity.innerHTML = `<i class="fa-solid fa-star"></i> Class: ${rarityLabels[char.Rarity] || 'Class ' + char.Rarity}`;
+    els.modalCharRarity.innerHTML = `<i class="fa-solid fa-star"></i> Class: ${rarityLabels[char.rarity] || 'Class ' + char.rarity}`;
     els.modalCharChapter.innerHTML = `<i class="fa-solid fa-book-open"></i> Unlock: Ch ${char.AppearChapter || '1'}`;
     
     // Check how many jobs the character has
@@ -945,6 +988,8 @@ function renderJobDetails() {
         els.modalJobProfile.textContent = 'Job variant details missing.';
         els.modalJobPiecePath.textContent = '-';
         els.modalJobIllustPath.textContent = '-';
+        els.modalJobPieceImg.classList.add('hidden');
+        els.modalJobIllustImg.classList.add('hidden');
         els.modalJobHP.textContent = '-';
         els.modalJobATK.textContent = '-';
         els.modalJobDEF.textContent = '-';
@@ -958,6 +1003,20 @@ function renderJobDetails() {
     els.modalJobProfile.textContent = getLocalizedString(job.ProfileString, 'Profile description not available.');
     els.modalJobPiecePath.textContent = job.piece_file || 'File Not Found in Pieces/';
     els.modalJobIllustPath.textContent = job.illust_file || 'File Not Found in Illust/';
+    
+    if (job.piece_file) {
+        els.modalJobPieceImg.src = `/api/assets/image?path=${encodeURIComponent(job.piece_file)}`;
+        els.modalJobPieceImg.classList.remove('hidden');
+    } else {
+        els.modalJobPieceImg.classList.add('hidden');
+    }
+    
+    if (job.illust_file) {
+        els.modalJobIllustImg.src = `/api/assets/image?path=${encodeURIComponent(job.illust_file)}`;
+        els.modalJobIllustImg.classList.remove('hidden');
+    } else {
+        els.modalJobIllustImg.classList.add('hidden');
+    }
     
     // Set stats
     els.modalJobHP.textContent = job.HP || 0;

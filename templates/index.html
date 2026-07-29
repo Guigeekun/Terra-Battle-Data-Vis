@@ -11,7 +11,7 @@
     <!-- FontAwesome for Premium Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=1.0.5">
 </head>
 <body>
     <!-- Loading Overlay -->
@@ -415,12 +415,18 @@
                             <div class="asset-reference-item">
                                 <span class="asset-label">Piece File (Icon)</span>
                                 <code id="modal-job-piece-path">-</code>
+                                <div class="piece-preview-container" style="margin-top: 8px; display: flex; justify-content: flex-start;">
+                                    <img id="modal-job-piece-img" src="" alt="Piece Icon" class="piece-preview-img clickable-preview hidden" style="width: 64px; height: 64px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); object-fit: contain; background: rgba(0,0,0,0.2);">
+                                </div>
                             </div>
                             <div class="asset-reference-item" style="margin-top: 8px;">
                                 <span class="asset-label">Illustration File</span>
                                 <code id="modal-job-illust-path">-</code>
+                                <div class="illust-preview-container" style="margin-top: 8px; display: flex; justify-content: center; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 6px;">
+                                    <img id="modal-job-illust-img" src="" alt="Job Illustration" class="illust-preview-img clickable-preview hidden" style="width: 100%; max-height: 220px; border-radius: 8px; object-fit: contain;">
+                                </div>
                             </div>
-                            <p class="asset-notice"><i class="fa-solid fa-circle-exclamation"></i> Note: These assets are obfuscated with the game's custom <code>ENCA</code> container format.</p>
+                            <p class="asset-notice"><i class="fa-solid fa-circle-exclamation"></i> Note: These assets are dynamically decrypted and loaded on-the-fly from their <code>ENCA</code> bundles.</p>
                         </div>
                     </div>
                     
@@ -462,7 +468,15 @@
         </div>
     </div>
 
+    <!-- LIGHTBOX MODAL: FULL SIZE IMAGE VIEW -->
+    <div class="modal-backdrop hidden" id="lightbox-modal" style="z-index: 2000; cursor: zoom-out;">
+        <div class="lightbox-content" style="position: relative; max-width: 90vw; max-height: 90vh; display: flex; align-items: center; justify-content: center;">
+            <button class="modal-close-btn" id="lightbox-close" style="top: -45px; right: -10px; background-color: rgba(0,0,0,0.5);"><i class="fa-solid fa-xmark"></i></button>
+            <img id="lightbox-img" src="" alt="Full Size Preview" style="max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
+        </div>
+    </div>
+
     <!-- Script File -->
-    <script src="/static/js/main.js"></script>
+    <script src="/static/js/main.js?v=1.0.5"></script>
 </body>
 </html>
