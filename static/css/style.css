@@ -283,7 +283,7 @@ h6 {
 /* TAB 1: DASHBOARD STYLINGS */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 24px;
     margin-bottom: 32px;
 }
@@ -457,13 +457,13 @@ h6 {
 /* Layout Grids */
 .grid-layout {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
     gap: 24px;
 }
 
 .grid-layout-small {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 20px;
 }
 

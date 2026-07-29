@@ -6,7 +6,7 @@ const state = {
     lang: 'en',
     activeTab: 'dashboard',
     activePlaylist: 'BGM',
-    
+
     // Loaded Data Arrays
     characters: [],
     buddies: [],
@@ -16,7 +16,7 @@ const state = {
     strings: {},
     audio: { BGM: [], SE: [] },
     assets: [],
-    
+
     // UI Selection
     selectedCharacter: null,
     selectedJobIndex: 0,
@@ -50,7 +50,7 @@ const els = {
     tabContents: document.querySelectorAll('.tab-content'),
     currentTabTitle: document.getElementById('current-tab-title'),
     currentTabDesc: document.getElementById('current-tab-desc'),
-    
+
     // Dashboard Stats
     statCharacters: document.getElementById('stat-count-characters'),
     statBuddies: document.getElementById('stat-count-buddies'),
@@ -58,7 +58,7 @@ const els = {
     statItems: document.getElementById('stat-count-items'),
     statStages: document.getElementById('stat-count-stages'),
     statAudio: document.getElementById('stat-count-audio'),
-    
+
     // Search Inputs
     charSearch: document.getElementById('char-search'),
     buddySearch: document.getElementById('buddy-search'),
@@ -67,14 +67,14 @@ const els = {
     chapterSearch: document.getElementById('chapter-search'),
     audioSearch: document.getElementById('audio-search'),
     assetSearch: document.getElementById('asset-search'),
-    
+
     // Select Filters
     charSpeciesFilter: document.getElementById('char-filter-species'),
     charRarityFilter: document.getElementById('char-filter-rarity'),
     buddyRarityFilter: document.getElementById('buddy-filter-rarity'),
     assetCategoryFilter: document.getElementById('asset-filter-category'),
     assetSignatureFilter: document.getElementById('asset-filter-signature'),
-    
+
     // Grids & Tables Container
     charactersGrid: document.getElementById('characters-grid'),
     buddiesGrid: document.getElementById('buddies-grid'),
@@ -85,7 +85,7 @@ const els = {
     stagesDetailContainer: document.getElementById('stages-detail-container'),
     detailChapterTitle: document.getElementById('detail-chapter-title'),
     chapterStagesList: document.getElementById('chapter-stages-list'),
-    
+
     // Audio Player Elements
     playlistContainer: document.getElementById('playlist-container'),
     playlistTabBtns: document.querySelectorAll('.playlist-tab-btn'),
@@ -94,10 +94,10 @@ const els = {
     trackFilename: document.getElementById('player-track-filename'),
     trackCategory: document.getElementById('player-track-category'),
     visualization: document.querySelector('.player-visualization'),
-    
+
     // Asset Table Container
     assetsTableBody: document.getElementById('assets-table-body'),
-    
+
     // Character Modal Elements
     charModal: document.getElementById('char-modal'),
     modalCloseBtn: document.getElementById('char-modal-close'),
@@ -136,7 +136,7 @@ async function initApp() {
     updateDashboardStats();
     populateSpeciesFilter();
     renderActiveTab();
-    
+
     // Hide loading overlay
     const loader = document.getElementById('loading-overlay');
     if (loader) {
@@ -151,7 +151,7 @@ function registerEventListeners() {
         state.lang = e.target.value;
         renderActiveTab();
     });
-    
+
     // Sidebar Tabs Event
     els.navItems.forEach(item => {
         item.addEventListener('click', (e) => {
@@ -160,7 +160,7 @@ function registerEventListeners() {
             switchTab(tabName);
         });
     });
-    
+
     // Dashboard Card Click Trigger Events
     document.querySelectorAll('.stat-card').forEach(card => {
         card.addEventListener('click', () => {
@@ -196,7 +196,7 @@ function registerEventListeners() {
             closeLightbox();
         }
     });
-    
+
     // Character Modal Job Tabs Toggle
     [els.modalTabJob1, els.modalTabJob2, els.modalTabJob3].forEach(tabBtn => {
         tabBtn.addEventListener('click', () => {
@@ -211,19 +211,19 @@ function registerEventListeners() {
     els.charSearch.addEventListener('input', renderCharacters);
     els.charSpeciesFilter.addEventListener('change', renderCharacters);
     els.charRarityFilter.addEventListener('change', renderCharacters);
-    
+
     els.buddySearch.addEventListener('input', renderBuddies);
     els.buddyRarityFilter.addEventListener('change', renderBuddies);
-    
+
     els.skillSearch.addEventListener('input', renderSkills);
     els.itemSearch.addEventListener('input', renderItems);
     els.chapterSearch.addEventListener('input', renderChaptersList);
     els.audioSearch.addEventListener('input', renderPlaylist);
-    
+
     els.assetSearch.addEventListener('input', renderAssets);
     els.assetCategoryFilter.addEventListener('change', renderAssets);
     els.assetSignatureFilter.addEventListener('change', renderAssets);
-    
+
     // Playlist Category Selector Tab Trigger
     els.playlistTabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -259,11 +259,11 @@ async function fetchAllData() {
             audio: '/api/audio',
             assets: '/api/assets'
         };
-        
+
         const [chars, buds, items, skills, stages, strings, audio, assets] = await Promise.all(
             Object.values(endpoints).map(url => fetch(url).then(res => res.json()))
         );
-        
+
         state.characters = chars;
         state.buddies = buds;
         state.items = items;
@@ -272,7 +272,7 @@ async function fetchAllData() {
         state.strings = strings;
         state.audio = audio;
         state.assets = assets;
-        
+
         console.log("All game databases successfully loaded.");
     } catch (e) {
         console.error("Error fetching gamedata APIs:", e);
@@ -282,7 +282,7 @@ async function fetchAllData() {
 // Switch tabs and set URL anchors
 function switchTab(tabName) {
     state.activeTab = tabName;
-    
+
     // Update active nav links
     els.navItems.forEach(item => {
         if (item.getAttribute('data-tab') === tabName) {
@@ -291,7 +291,7 @@ function switchTab(tabName) {
             item.classList.remove('active');
         }
     });
-    
+
     // Update tab view visibility
     els.tabContents.forEach(content => {
         if (content.getAttribute('id') === `tab-${tabName}`) {
@@ -300,7 +300,7 @@ function switchTab(tabName) {
             content.classList.remove('active');
         }
     });
-    
+
     // Tab Header Labels
     const titles = {
         dashboard: { title: 'Dashboard Overview', desc: 'High-level statistics and category index of the exported game gamedata.' },
@@ -312,12 +312,12 @@ function switchTab(tabName) {
         audio: { title: 'Audio Asset Player', desc: 'Stream background music and sound effects directly extracted from the game files.' },
         assets: { title: 'Asset Files Inventory', desc: 'Browse all loaded resources inside local-input, size stats and containers.' }
     };
-    
+
     if (titles[tabName]) {
         els.currentTabTitle.textContent = titles[tabName].title;
         els.currentTabDesc.textContent = titles[tabName].desc;
     }
-    
+
     renderActiveTab();
 }
 
@@ -357,7 +357,7 @@ function updateDashboardStats() {
     els.statSkills.textContent = state.skills.length || 0;
     els.statItems.textContent = state.items.length || 0;
     els.statStages.textContent = state.stages.length || 0;
-    
+
     const bgmCount = state.audio.BGM ? state.audio.BGM.length : 0;
     const seCount = state.audio.SE ? state.audio.SE.length : 0;
     els.statAudio.textContent = `${bgmCount} BGM / ${seCount} SE`;
@@ -387,48 +387,46 @@ function renderCharacters() {
     const query = els.charSearch.value.toLowerCase();
     const species = els.charSpeciesFilter.value;
     const rarity = els.charRarityFilter.value;
-    
+
     els.charactersGrid.innerHTML = '';
-    
+
     const filtered = state.characters.filter(char => {
         // Match Search Query
         const nameMatches = getLocalizedString(char.NameString).toLowerCase().includes(query) ||
-                            (char.ID && char.ID.toString().includes(query));
-                            
+            (char.ID && char.ID.toString().includes(query));
+
         // Match Species Filter
         const speciesMatches = species === '' || char.Species == species;
-        
+
         // Match Rarity Filter
         const rarityMatches = rarity === '' || char.rarity == rarity;
-        
+
         return nameMatches && speciesMatches && rarityMatches;
     });
-    
+
     if (filtered.length === 0) {
         els.charactersGrid.innerHTML = '<p class="stages-panel-placeholder" style="grid-column: 1/-1;">No characters match the selected filters.</p>';
         return;
     }
-    
+
     filtered.forEach(char => {
         const card = document.createElement('div');
         card.className = 'card-item';
-        
+
         const firstJob = char.JobsInfo && char.JobsInfo.length > 0 ? char.JobsInfo[0] : null;
         const pieceUrl = firstJob && firstJob.piece_file ? `/api/assets/image?path=${encodeURIComponent(firstJob.piece_file)}` : null;
-        
-        const cardImageHtml = pieceUrl ? 
+
+        const cardImageHtml = pieceUrl ?
             `<div class="card-image" style="width: 100%; background-color: rgba(0, 0, 0, 0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; border: 1px solid var(--border-color); overflow: hidden;">` +
-                `<img src="${pieceUrl}" alt="Icon" style="width: 100%; height: 100%; object-fit: cover;">` +
-            `</div>` : 
+            `<img src="${pieceUrl}" alt="Icon" style="width: 100%; height: 100%; object-fit: cover;">` +
+            `</div>` :
             `<div class="card-image-placeholder"><i class="fa-solid fa-user-shield"></i></div>`;
-            
+
         card.innerHTML = `
             <span class="card-badge badge-rarity">${rarityLabels[char.rarity] || 'Class ' + char.rarity}</span>
             ${cardImageHtml}
             <h4 class="card-name">${getLocalizedString(char.NameString)}</h4>
-            <div class="card-meta">
-                <span><i class="fa-solid fa-venus-mars"></i> ${char.Gender === 1 ? 'Male' : (char.Gender === 2 ? 'Female' : 'Unknown')}</span>
-                <span><i class="fa-solid fa-circle-nodes"></i> ID: ${char.ID}</span>
+            <div class="card-meta"><span><i class="fa-solid fa-circle-nodes"></i> ID: ${char.ID}</span>
             </div>
             <div class="card-details-row">
                 <span>Jobs Unlocked: ${char.JobsInfo ? char.JobsInfo.length : 0}</span>
@@ -445,33 +443,33 @@ function renderCharacters() {
 function renderBuddies() {
     const query = els.buddySearch.value.toLowerCase();
     const rarity = els.buddyRarityFilter.value;
-    
+
     els.buddiesGrid.innerHTML = '';
-    
+
     const filtered = state.buddies.filter(buddy => {
         const nameMatches = getLocalizedString(buddy.NameString).toLowerCase().includes(query) ||
-                            getLocalizedString(buddy.DescString).toLowerCase().includes(query);
+            getLocalizedString(buddy.DescString).toLowerCase().includes(query);
         const rarityMatches = rarity === '' || buddy.rarity == rarity;
         return nameMatches && rarityMatches;
     });
-    
+
     if (filtered.length === 0) {
         els.buddiesGrid.innerHTML = '<p class="stages-panel-placeholder" style="grid-column: 1/-1;">No companions match the selected filters.</p>';
         return;
     }
-    
+
     filtered.forEach(buddy => {
         const card = document.createElement('div');
         card.className = 'card-item';
-        
+
         const thumbUrl = buddy.thumb_file ? `/api/assets/image?path=${encodeURIComponent(buddy.thumb_file)}` : null;
-        
-        const cardImageHtml = thumbUrl ? 
+
+        const cardImageHtml = thumbUrl ?
             `<div class="card-image" style="width: 100%; background-color: rgba(0, 0, 0, 0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; border: 1px solid var(--border-color); overflow: hidden;">` +
-                `<img src="${thumbUrl}" alt="Companion" style="width: 100%; height: 100%; object-fit: cover;">` +
-            `</div>` : 
+            `<img src="${thumbUrl}" alt="Companion" style="width: 100%; height: 100%; object-fit: cover;">` +
+            `</div>` :
             `<div class="card-image-placeholder"><i class="fa-solid fa-paw"></i></div>`;
-            
+
         card.innerHTML = `
             <span class="card-badge badge-rarity">${rarityLabels[buddy.rarity] || 'Class ' + buddy.rarity}</span>
             ${cardImageHtml}
@@ -499,18 +497,18 @@ function renderBuddies() {
 function renderSkills() {
     const query = els.skillSearch.value.toLowerCase();
     els.skillsTableBody.innerHTML = '';
-    
+
     const filtered = state.skills.filter(skill => {
         return (skill.nameString && getLocalizedString(skill.nameString).toLowerCase().includes(query)) ||
-               (skill.descString && getLocalizedString(skill.descString).toLowerCase().includes(query)) ||
-               (skill.iconNo && skill.iconNo.toString().includes(query));
+            (skill.descString && getLocalizedString(skill.descString).toLowerCase().includes(query)) ||
+            (skill.iconNo && skill.iconNo.toString().includes(query));
     });
-    
+
     if (filtered.length === 0) {
         els.skillsTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No skills matched the search.</td></tr>';
         return;
     }
-    
+
     // Render top 150 skills to keep performance solid
     const maxRender = 150;
     filtered.slice(0, maxRender).forEach((skill, index) => {
@@ -533,17 +531,17 @@ function renderSkills() {
 function renderItems() {
     const query = els.itemSearch.value.toLowerCase();
     els.itemsGrid.innerHTML = '';
-    
+
     const filtered = state.items.filter(item => {
         return getLocalizedString(item.NameString).toLowerCase().includes(query) ||
-               getLocalizedString(item.DescString).toLowerCase().includes(query);
+            getLocalizedString(item.DescString).toLowerCase().includes(query);
     });
-    
+
     if (filtered.length === 0) {
         els.itemsGrid.innerHTML = '<p class="stages-panel-placeholder" style="grid-column: 1/-1;">No items found.</p>';
         return;
     }
-    
+
     filtered.forEach(item => {
         const card = document.createElement('div');
         card.className = 'card-item';
@@ -570,24 +568,24 @@ function renderItems() {
 function renderChaptersList() {
     const query = els.chapterSearch.value.toLowerCase();
     els.chaptersListContainer.innerHTML = '';
-    
+
     const filtered = state.stages.filter(ch => {
         const name = getChapterName(ch.chapterNo);
         return name.toLowerCase().includes(query) || ch.chapterNo.toString().includes(query);
     });
-    
+
     if (filtered.length === 0) {
         els.chaptersListContainer.innerHTML = '<p style="text-align: center; padding: 12px; color: var(--text-muted); font-size: 13px;">No chapters match.</p>';
         return;
     }
-    
+
     filtered.forEach(ch => {
         const btn = document.createElement('button');
         btn.className = 'chapter-btn';
         if (state.currentChapter && state.currentChapter.chapterNo === ch.chapterNo) {
             btn.classList.add('active');
         }
-        
+
         btn.innerHTML = `
             <span>${getChapterName(ch.chapterNo)}</span>
             <span class="badge" style="font-size: 9px; padding: 2px 6px;">${ch.sections ? ch.sections.length : 0} Sect</span>
@@ -614,14 +612,14 @@ function getChapterName(chapterNo) {
 
 function translateStageTitle(rawTitle) {
     if (!rawTitle) return "Section Details";
-    
+
     // Pattern: [るつぼの都] トカゲ - 14
     const match = rawTitle.match(/^\[(.*?)\]\s*(.*?)\s*-\s*(\d+)$/);
     if (match) {
         const chName = match[1];
         const speciesName = match[2];
         const num = match[3];
-        
+
         // 1. Chapter Name Lookup
         let chTrans = chName;
         if (state.strings && state.strings.scenarioSet) {
@@ -632,7 +630,7 @@ function translateStageTitle(rawTitle) {
                 chTrans = entry[state.lang].replace(/^Ch\s*\d+:\s*/i, "").replace(/^第\d+章\s*/, "");
             }
         }
-        
+
         // 2. Species Name Lookup
         let spTrans = speciesName;
         const speciesMap = {
@@ -641,11 +639,11 @@ function translateStageTitle(rawTitle) {
             "ケモノ": { en: "Beastfolk", ja: "ケモノ", fr: "Sauvage", de: "Biestvolk", es: "Bestia", zh_tw: "獸人族" },
             "岩人": { en: "Stonefolk", ja: "岩人", fr: "Rocheux", de: "Steinvolk", es: "Pétreo", zh_tw: "岩人族" }
         };
-        
+
         if (speciesMap[speciesName] && speciesMap[speciesName][state.lang]) {
             spTrans = speciesMap[speciesName][state.lang];
         }
-        
+
         return `[${chTrans}] ${spTrans} - ${num}`;
     }
     return rawTitle;
@@ -656,31 +654,31 @@ window.stageWavesRegistry = window.stageWavesRegistry || {};
 
 function renderStagesDetail() {
     if (!state.currentChapter) return;
-    
+
     els.stagesPlaceholder.classList.add('hidden');
     els.stagesDetailContainer.classList.remove('hidden');
     els.detailChapterTitle.textContent = getChapterName(state.currentChapter.chapterNo);
     els.chapterStagesList.innerHTML = '';
-    
+
     const sections = state.currentChapter.sections || [];
     if (sections.length === 0) {
         els.chapterStagesList.innerHTML = '<p class="stages-panel-placeholder">No stages/sections registered in this chapter.</p>';
         return;
     }
-    
+
     sections.forEach((sec, idx) => {
         const item = document.createElement('div');
         item.className = 'stage-item-card';
-        
+
         // Match drop items & companions
         const dropItems = sec.itemID ? `Drop Item ID: ${sec.itemID} (${sec.itemCount || 1})` : 'No Item Drops';
-        const buddiesStr = sec.dropBuddies && sec.dropBuddies.length > 0 ? 
-                           `Companion Drops: ${sec.dropBuddies.join(', ')}` : 
-                           'No Companion Drops';
-                           
+        const buddiesStr = sec.dropBuddies && sec.dropBuddies.length > 0 ?
+            `Companion Drops: ${sec.dropBuddies.join(', ')}` :
+            'No Companion Drops';
+
         const sectionRegistryKey = `ch${state.currentChapter.chapterNo}_sec${idx + 1}`;
         window.stageWavesRegistry[sectionRegistryKey] = sec.waves_details || [];
-                           
+
         item.innerHTML = `
             <div class="stage-item-header">
                 <span class="stage-item-title">${translateStageTitle(sec.title)}</span>
@@ -721,7 +719,7 @@ function renderStagesDetail() {
 function toggleStageLayout(button, registryKey) {
     const container = document.getElementById(`layout-${registryKey}`);
     if (!container) return;
-    
+
     const isHidden = container.classList.contains('hidden');
     if (isHidden) {
         container.classList.remove('hidden');
@@ -738,17 +736,17 @@ function initStageLayout(registryKey) {
     const tabsContainer = document.getElementById(`tabs-${registryKey}`);
     const boardContainer = document.getElementById(`board-${registryKey}`);
     const listContainer = document.getElementById(`enemies-list-${registryKey}`);
-    
+
     if (!tabsContainer || !boardContainer || !listContainer) return;
-    
+
     tabsContainer.innerHTML = '';
-    
+
     if (waves.length === 0) {
         boardContainer.innerHTML = '<div style="grid-column: span 6; grid-row: span 8; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); height: 100%;">No wave data found for this stage.</div>';
         listContainer.innerHTML = '<p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 20px;">No enemy list available.</p>';
         return;
     }
-    
+
     // Create tabs for each wave
     waves.forEach((wave, idx) => {
         const tab = document.createElement('button');
@@ -761,7 +759,7 @@ function initStageLayout(registryKey) {
         };
         tabsContainer.appendChild(tab);
     });
-    
+
     drawWaveBoard(registryKey, 0);
 }
 
@@ -770,33 +768,33 @@ function drawWaveBoard(registryKey, waveIndex) {
     const wave = waves[waveIndex];
     const boardContainer = document.getElementById(`board-${registryKey}`);
     const listContainer = document.getElementById(`enemies-list-${registryKey}`);
-    
+
     if (!wave || !boardContainer || !listContainer) return;
-    
+
     boardContainer.innerHTML = '';
     listContainer.innerHTML = '';
-    
+
     const enemies = wave.enemies || [];
     const enemyMap = {};
     enemies.forEach(enemy => {
         const key = `${enemy.x},${enemy.y}`;
         enemyMap[key] = enemy;
     });
-    
+
     // Generate the 6x8 board (8 rows, 6 columns)
     for (let y = 0; y < 8; y++) {
         for (let x = 0; x < 6; x++) {
             const cell = document.createElement('div');
             cell.className = 'board-cell';
             cell.setAttribute('data-coord', `${x},${y}`);
-            
+
             const enemy = enemyMap[`${x},${y}`];
             if (enemy) {
                 cell.classList.add('has-enemy');
-                
+
                 const token = document.createElement('div');
                 token.className = 'enemy-token';
-                
+
                 const isBoss = enemy.enemy_var.includes('BAKUROU') || enemy.enemy_var.includes('CHAMP') || enemy.enemy_var.includes('KING') || (enemy.HP && enemy.HP > 1000);
                 if (isBoss) {
                     token.classList.add('boss');
@@ -804,9 +802,9 @@ function drawWaveBoard(registryKey, waveIndex) {
                 } else {
                     token.textContent = 'E';
                 }
-                
+
                 const enemyName = enemy.NameString?.[state.lang] || enemy.NameString?.en || enemy.enemy_var;
-                
+
                 const tooltip = document.createElement('div');
                 tooltip.className = 'tooltip-content';
                 tooltip.innerHTML = `
@@ -817,25 +815,25 @@ function drawWaveBoard(registryKey, waveIndex) {
                     <div class="tooltip-stat-row"><span>DEF:</span><span class="tooltip-stat-val">${enemy.DEF || '?'}</span></div>
                     <div class="tooltip-stat-row"><span>Coord:</span><span class="tooltip-stat-val">(${x}, ${y})</span></div>
                 `;
-                
+
                 token.appendChild(tooltip);
                 cell.appendChild(token);
             }
             boardContainer.appendChild(cell);
         }
     }
-    
+
     if (enemies.length === 0) {
         listContainer.innerHTML = '<p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 20px;">No enemies spawn in this wave.</p>';
         return;
     }
-    
+
     enemies.forEach(enemy => {
         const item = document.createElement('div');
         item.className = 'wave-enemy-item';
-        
+
         const enemyName = enemy.NameString?.[state.lang] || enemy.NameString?.en || enemy.enemy_var;
-        
+
         item.innerHTML = `
             <div class="wave-enemy-name-col">
                 <span class="wave-enemy-name-text">${enemyName}</span>
@@ -853,24 +851,24 @@ function drawWaveBoard(registryKey, waveIndex) {
 function renderPlaylist() {
     const query = els.audioSearch.value.toLowerCase();
     els.playlistContainer.innerHTML = '';
-    
+
     const tracks = state.audio[state.activePlaylist] || [];
     const filtered = tracks.filter(t => t.name.toLowerCase().includes(query) || t.filename.toLowerCase().includes(query));
-    
+
     if (filtered.length === 0) {
         els.playlistContainer.innerHTML = '<p style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px;">No audio assets found.</p>';
         return;
     }
-    
+
     filtered.forEach(track => {
         const btn = document.createElement('button');
         btn.className = 'playlist-item';
-        
+
         // Highlight active track
         if (els.audioPlayer.src && els.audioPlayer.src.includes(track.filename)) {
             btn.classList.add('active');
         }
-        
+
         const sizeMb = (track.size_bytes / (1024 * 1024)).toFixed(2);
         btn.innerHTML = `
             <div style="text-align: left;">
@@ -879,16 +877,16 @@ function renderPlaylist() {
             </div>
             <span class="audio-duration">${sizeMb} MB</span>
         `;
-        
+
         btn.addEventListener('click', () => {
             document.querySelectorAll('.playlist-item').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
+
             // Set Player state labels
             els.trackName.textContent = track.name;
             els.trackFilename.textContent = track.filename;
             els.trackCategory.textContent = state.activePlaylist;
-            
+
             // Stream audio from backend
             els.audioPlayer.src = `/api/play/${state.activePlaylist.toLowerCase()}/${track.filename}`;
             els.audioPlayer.play();
@@ -904,32 +902,32 @@ function renderAssets() {
     const query = els.assetSearch.value.toLowerCase();
     const category = els.assetCategoryFilter.value;
     const signature = els.assetSignatureFilter.value;
-    
+
     els.assetsTableBody.innerHTML = '';
-    
+
     const filtered = state.assets.filter(asset => {
         const textMatches = asset.filename.toLowerCase().includes(query) ||
-                            asset.path.toLowerCase().includes(query);
+            asset.path.toLowerCase().includes(query);
         const catMatches = category === '' || asset.category === category;
         const sigMatches = signature === '' || asset.signature.includes(signature);
         return textMatches && catMatches && sigMatches;
     });
-    
+
     if (filtered.length === 0) {
         els.assetsTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No assets in local-input match your search.</td></tr>';
         return;
     }
-    
+
     // Top 200 assets to prevent memory freeze
     filtered.slice(0, 200).forEach(asset => {
         const sizeMb = (asset.size_bytes / (1024 * 1024)).toFixed(2);
         const row = document.createElement('tr');
-        
+
         const isEncrypted = asset.signature.includes("ENCA");
-        const sigBadge = isEncrypted ? 
-                         `<span class="badge" style="background-color: rgba(236, 72, 153, 0.08); border-color: rgba(236, 72, 153, 0.2); color: var(--accent-pink);">${asset.signature}</span>` : 
-                         `<span class="badge" style="background-color: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.2); color: var(--accent-blue);">${asset.signature}</span>`;
-                         
+        const sigBadge = isEncrypted ?
+            `<span class="badge" style="background-color: rgba(236, 72, 153, 0.08); border-color: rgba(236, 72, 153, 0.2); color: var(--accent-pink);">${asset.signature}</span>` :
+            `<span class="badge" style="background-color: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.2); color: var(--accent-blue);">${asset.signature}</span>`;
+
         row.innerHTML = `
             <td><strong style="font-family: var(--font-heading); color: var(--text-primary);">${asset.category}</strong></td>
             <td><span style="font-family: monospace; font-size: 12px;">${asset.filename}</span></td>
@@ -947,12 +945,12 @@ function renderAssets() {
 function openCharacterModal(char) {
     state.selectedCharacter = char;
     state.selectedJobIndex = 0;
-    
+
     // Set active tab to job 1
     els.modalTabJob1.classList.add('active');
     els.modalTabJob2.classList.remove('active');
     els.modalTabJob3.classList.remove('active');
-    
+
     // Update labels
     const speciesTrans = speciesTranslations[char.Species];
     els.modalCharSpecies.textContent = speciesTrans ? (speciesTrans[state.lang] || speciesTrans['en']) : 'Unknown';
@@ -960,7 +958,7 @@ function openCharacterModal(char) {
     els.modalCharGender.innerHTML = `<i class="fa-solid fa-venus-mars"></i> Gender: ${char.Gender === 1 ? 'Male' : (char.Gender === 2 ? 'Female' : 'Unknown')}`;
     els.modalCharRarity.innerHTML = `<i class="fa-solid fa-star"></i> Class: ${rarityLabels[char.rarity] || 'Class ' + char.rarity}`;
     els.modalCharChapter.innerHTML = `<i class="fa-solid fa-book-open"></i> Unlock: Ch ${char.AppearChapter || '1'}`;
-    
+
     // Check how many jobs the character has
     const jobs = char.JobsInfo || [];
     if (jobs.length > 1) {
@@ -973,17 +971,17 @@ function openCharacterModal(char) {
     } else {
         els.modalTabJob3.classList.add('hidden');
     }
-    
+
     renderJobDetails();
     els.charModal.classList.remove('hidden');
 }
 
 function renderJobDetails() {
     if (!state.selectedCharacter) return;
-    
+
     const jobs = state.selectedCharacter.JobsInfo || [];
     const job = jobs[state.selectedJobIndex];
-    
+
     if (!job) {
         els.modalJobProfile.textContent = 'Job variant details missing.';
         els.modalJobPiecePath.textContent = '-';
@@ -998,37 +996,37 @@ function renderJobDetails() {
         els.modalJobSkillsList.innerHTML = '';
         return;
     }
-    
+
     // Set profile text and assets
     els.modalJobProfile.textContent = getLocalizedString(job.ProfileString, 'Profile description not available.');
     els.modalJobPiecePath.textContent = job.piece_file || 'File Not Found in Pieces/';
     els.modalJobIllustPath.textContent = job.illust_file || 'File Not Found in Illust/';
-    
+
     if (job.piece_file) {
         els.modalJobPieceImg.src = `/api/assets/image?path=${encodeURIComponent(job.piece_file)}`;
         els.modalJobPieceImg.classList.remove('hidden');
     } else {
         els.modalJobPieceImg.classList.add('hidden');
     }
-    
+
     if (job.illust_file) {
         els.modalJobIllustImg.src = `/api/assets/image?path=${encodeURIComponent(job.illust_file)}`;
         els.modalJobIllustImg.classList.remove('hidden');
     } else {
         els.modalJobIllustImg.classList.add('hidden');
     }
-    
+
     // Set stats
     els.modalJobHP.textContent = job.HP || 0;
     els.modalJobATK.textContent = job.ATK || 0;
     els.modalJobDEF.textContent = job.DEF || 0;
     els.modalJobMATK.textContent = job.MATK || 0;
     els.modalJobMDEF.textContent = job.MDEF || 0;
-    
+
     // Renders skills
     els.modalJobSkillsList.innerHTML = '';
     const skillIDs = job.Skills || [];
-    
+
     if (skillIDs.length === 0) {
         els.modalJobSkillsList.innerHTML = '<li style="color: var(--text-muted);">No skills learned by this job.</li>';
     } else {
