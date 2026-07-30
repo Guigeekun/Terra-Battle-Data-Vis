@@ -179,9 +179,30 @@ def get_buddies():
 
 @app.get('/api/items')
 def get_items():
-    """Retrieve items database."""
+    """Retrieve items database, augmented with local item icon URL and sortOrder image info."""
     item_db = gamedata.get("items", {})
-    return item_db.get("itemSet", [])
+    items = item_db.get("itemSet", [])
+
+    result = []
+    for idx, item in enumerate(items):
+        sort_order = item.get("sortOrder", 0)
+        piece_path = find_local_asset("Pieces", sort_order, "img") if sort_order else None
+
+        item_copy = dict(item)
+        item_copy["image_id"] = sort_order
+        item_copy["piece_file"] = piece_path
+        item_copy["icon_url"] = f"/api/assets/item/item_{idx + 1:02d}.png"
+        result.append(item_copy)
+
+    return result
+
+@app.get('/api/assets/item/{filename}')
+def serve_item_icon(filename: str):
+    """Serve cropped item icon from user-data/extracted-gamedata/item_icons/"""
+    path = os.path.join("user-data", "extracted-gamedata", "item_icons", filename)
+    if os.path.exists(path):
+        return FileResponse(path)
+    raise HTTPException(status_code=404, detail="Item icon not found")
 
 @app.get('/api/skills')
 def get_skills():

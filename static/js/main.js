@@ -546,16 +546,36 @@ function renderItems() {
         const card = document.createElement('div');
         card.className = 'card-item';
         card.style.padding = '16px';
+
+        // Build image HTML: use the icon_url path directly
+        const imgHtml = item.icon_url
+            ? `<img
+                src="${item.icon_url}"
+                alt="${getLocalizedString(item.NameString)}"
+                style="width:64px;height:64px;object-fit:contain;image-rendering:pixelated;"
+                onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+               />
+               <div class="card-image-placeholder" style="height:64px;display:none;">
+                   <i class="fa-solid fa-gem" style="font-size:20px;"></i>
+               </div>`
+            : `<div class="card-image-placeholder" style="height:64px;">
+                   <i class="fa-solid fa-gem" style="font-size:20px;"></i>
+               </div>`;
+
+        // Find the index of this item in the global items list for display
+        const itemIndex = state.items.indexOf(item);
+
         card.innerHTML = `
-            <div class="card-image-placeholder" style="height: 70px; margin-bottom: 10px;">
-                <i class="fa-solid fa-gem" style="font-size: 20px;"></i>
+            <div style="display:flex;align-items:center;justify-content:center;margin-bottom:10px;min-height:64px;">
+                ${imgHtml}
             </div>
             <h5 class="card-name" style="font-size: 14px;">${getLocalizedString(item.NameString)}</h5>
             <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; margin-top: 4px; flex-grow: 1;">
                 ${getLocalizedString(item.DescString)}
             </p>
             <div class="card-details-row" style="margin-top: 8px; padding-top: 6px;">
-                <span>Type/Order: ${item.sortOrder || 0}</span>
+                <span>ID: ${itemIndex}</span>
+                <span>Sort: ${item.sortOrder || 0}</span>
             </div>
         `;
         els.itemsGrid.appendChild(card);
@@ -672,10 +692,21 @@ function renderStagesDetail() {
 
         // Match drop items & companions
         const dropItems = sec.itemID ? `Drop Item ID: ${sec.itemID} (${sec.itemCount || 1})` : 'No Item Drops';
-        const buddiesStr = sec.dropBuddies && sec.dropBuddies.length > 0 ?
-            `Companion Drops: ${sec.dropBuddies.join(', ')}` :
-            'No Companion Drops';
-
+        // Build a human‑readable companion‑drops string
+        let buddiesStr = '';
+        if (Array.isArray(sec.dropBuddies) && sec.dropBuddies.length) {
+            // If the array contains objects, try to pull a meaningful field (e.g., name or id)
+            const parts = sec.dropBuddies.map(b => {
+                if (typeof b === 'object' && b !== null) {
+                    // Prefer a `name` property, fall back to `id` or JSON string
+                    return b.name || b.id || JSON.stringify(b);
+                }
+                return String(b);
+            });
+            buddiesStr = `Companion Drops: ${parts.join(', ')}`;
+        } else {
+            buddiesStr = 'No Companion Drops';
+        }
         const sectionRegistryKey = `ch${state.currentChapter.chapterNo}_sec${idx + 1}`;
         window.stageWavesRegistry[sectionRegistryKey] = sec.waves_details || [];
 
