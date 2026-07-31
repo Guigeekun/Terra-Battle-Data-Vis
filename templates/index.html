@@ -307,8 +307,8 @@
                             </div>
                             
                             <div class="player-info-card">
-                                <h5><i class="fa-solid fa-info-circle"></i> Audio On-The-Fly Extraction</h5>
-                                <p>This browser triggers a backend route that loads the raw <code>UnityFS</code> audio asset files in memory, parses the C# <code>AudioClip</code> wrapper, extracts the native OGG/WAV samples, and streams them as a standard WAV response. No temporary files are written to disk.</p>
+                                <h5><i class="fa-solid fa-info-circle"></i> Pre-Extracted Audio Playback</h5>
+                                <p>This browser streams standard <code>.wav</code> files that were pre-extracted from the game's audio bundles. All audio assets are served directly from the <code>user-data</code> folder, ensuring zero runtime CPU overhead and instant playback.</p>
                             </div>
                         </div>
                         
@@ -426,7 +426,7 @@
                                     <img id="modal-job-illust-img" src="" alt="Job Illustration" class="illust-preview-img clickable-preview hidden" style="width: 100%; max-height: 220px; border-radius: 8px; object-fit: contain;">
                                 </div>
                             </div>
-                            <p class="asset-notice"><i class="fa-solid fa-circle-exclamation"></i> Note: These assets are dynamically decrypted and loaded on-the-fly from their <code>ENCA</code> bundles.</p>
+                            <p class="asset-notice"><i class="fa-solid fa-circle-exclamation"></i> Note: These assets are pre-extracted from the game bundles and served statically as standard PNG files from the <code>user-data</code> folder.</p>
                         </div>
                     </div>
                     
