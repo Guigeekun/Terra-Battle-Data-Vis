@@ -106,6 +106,31 @@ def decrypt_string(data: list[int], inverse_table: bytes) -> str:
     return plain_bytes.decode("utf-8", errors="replace")
 
 
+MAGIC = b"ENCA"
+
+def _calc_index(index: int, size: int) -> int:
+    low = index & 0xFF
+    if (index >> 8) != ((size - 1) >> 8):
+        low ^= 0xFF
+    return (index & ~0xFF) | low
+
+
+def _transform_byte(value: int) -> int:
+    return ((value >> 4) | ((value & 0x0F) << 4)) ^ 0xFF
+
+
+def decrypt_enca(source: bytes, inverse_table: bytes) -> bytes:
+    if not source.startswith(MAGIC) or inverse_table is None:
+        return source
+    size = len(source) - len(MAGIC)
+    if size == 0:
+        return b""
+    plain = bytearray(size)
+    for source_index, value in enumerate(source[len(MAGIC):]):
+        plain[_calc_index(size - 1 - source_index, size)] = _transform_byte(inverse_table[value])
+    return bytes(plain)
+
+
 def is_encrypted_string(obj: Any) -> bool:
     """Determine if a Python object represents serialized EncryptedString data."""
     if isinstance(obj, dict) and list(obj.keys()) == ["data"]:
@@ -507,6 +532,89 @@ def extract_item_icons(env: Any, output_dir: Path) -> None:
     print(f"    Successfully extracted {cropped_count} item icons.")
 
 
+def extract_images_from_dir(category: str, input_dir: Path, output_dir: Path, inverse_table: bytes) -> None:
+    cat_in_dir = input_dir / category
+    if not cat_in_dir.exists():
+        print(f"  Directory not found: {cat_in_dir}")
+        return
+        
+    cat_out_dir = output_dir / category
+    cat_out_dir.mkdir(parents=True, exist_ok=True)
+    
+    bin_files = list(cat_in_dir.glob("*.bin"))
+    if not bin_files:
+        return
+        
+    print(f"  Extracting {len(bin_files)} images from {category}...")
+    count = 0
+    for f in bin_files:
+        try:
+            file_bytes = f.read_bytes()
+            decrypted_bytes = decrypt_enca(file_bytes, inverse_table)
+            
+            env = UnityPy.load(decrypted_bytes)
+            extracted = False
+            for obj in env.objects:
+                if obj.type.name in ('Texture2D', 'Sprite'):
+                    data = obj.read()
+                    img = data.image
+                    
+                    # Save as PNG
+                    out_path = cat_out_dir / f"{f.stem}.png"
+                    img.save(out_path)
+                    extracted = True
+                    count += 1
+                    break
+            if not extracted:
+                print(f"    No Texture2D/Sprite found in {f.name}")
+        except Exception as e:
+            print(f"    Failed to extract image {f.name}: {e}")
+            
+    print(f"  Successfully extracted {count} images in {category}")
+
+
+def extract_audio_from_dir(category: str, input_dir: Path, output_dir: Path, inverse_table: bytes) -> None:
+    cat_in_dir = input_dir / category
+    if not cat_in_dir.exists():
+        print(f"  Directory not found: {cat_in_dir}")
+        return
+        
+    cat_out_dir = output_dir / category
+    cat_out_dir.mkdir(parents=True, exist_ok=True)
+    
+    bin_files = list(cat_in_dir.glob("*.bin"))
+    if not bin_files:
+        return
+        
+    print(f"  Extracting {len(bin_files)} audio clips from {category}...")
+    count = 0
+    for f in bin_files:
+        try:
+            file_bytes = f.read_bytes()
+            decrypted_bytes = decrypt_enca(file_bytes, inverse_table)
+            
+            env = UnityPy.load(decrypted_bytes)
+            extracted = False
+            for obj in env.objects:
+                if obj.type.name == 'AudioClip':
+                    clip = obj.read()
+                    if clip.samples:
+                        wav_name = next(iter(clip.samples.keys()))
+                        wav_bytes = clip.samples[wav_name]
+                        
+                        out_path = cat_out_dir / f"{f.stem}.wav"
+                        out_path.write_bytes(wav_bytes)
+                        extracted = True
+                        count += 1
+                        break
+            if not extracted:
+                print(f"    No AudioClip found in {f.name}")
+        except Exception as e:
+            print(f"    Failed to extract audio {f.name}: {e}")
+            
+    print(f"  Successfully extracted {count} audio clips in {category}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     BASE_DIR = Path(__file__).resolve().parent.parent
@@ -596,6 +704,23 @@ def main() -> int:
         # Step 5b: Extract item icons from ItemAtlas
         print("  Extracting item icons from ItemAtlas...")
         extract_item_icons(env, output_dir)
+        print()
+
+        # Step 5c: Extract images from local android bundles
+        print("  Extracting images from local Android asset bundles...")
+        android_dir = apk_path.parent / "resources" / "data_u2017" / "android"
+        if android_dir.exists():
+            for category in ("BG", "Banner", "BuddyImages", "BuddyThumbs", "Illust", "Pieces"):
+                extract_images_from_dir(category, android_dir, output_dir, inverse_table)
+        else:
+            print(f"  WARNING: Android resources directory not found at {android_dir}")
+        print()
+
+        # Step 5d: Extract audio from local android bundles
+        print("  Extracting audio from local Android asset bundles...")
+        if android_dir.exists():
+            for category in ("BGM", "SE"):
+                extract_audio_from_dir(category, android_dir, output_dir, inverse_table)
         print()
 
     finally:

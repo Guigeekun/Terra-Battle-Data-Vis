@@ -17,7 +17,6 @@ async def lifespan(app: FastAPI):
     # Load databases before launching web server
     print("Loading game data databases...")
     load_databases()
-    load_inverse_table()
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -27,54 +26,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Paths
 DATA_DIR = os.path.join("user-data", "extracted-gamedata", "game_data")
+EXTRACTED_DIR = os.path.join("user-data", "extracted-gamedata")
 LOCAL_INPUT_DIR = os.path.join("local-input", "resources", "data_u2017", "android")
 
 # Cached Databases
 gamedata = {}
-INVERSE_TABLE = None
-
-def load_inverse_table():
-    global INVERSE_TABLE
-    apk_path = os.path.join("local-input", "terra-battle-5.5.7-170.apk")
-    if os.path.exists("config.json"):
-        try:
-            with open("config.json", "r", encoding="utf-8") as f:
-                config = json.load(f)
-                apk_path = config.get("apk_path", apk_path)
-        except Exception:
-            pass
-            
-    if os.path.exists(apk_path):
-        try:
-            import zipfile
-            with zipfile.ZipFile(apk_path) as z:
-                metadata = z.read("assets/bin/Data/Managed/Metadata/global-metadata.dat")
-                INVERSE_TABLE = metadata[0x601CAD : 0x601CAD + 256]
-                print("Loaded ENCA decryption table from APK metadata.")
-        except Exception as e:
-            print(f"Warning: Could not load decryption table from APK metadata: {e}")
-
-MAGIC = b"ENCA"
-
-def _calc_index(index: int, size: int) -> int:
-    low = index & 0xFF
-    if (index >> 8) != ((size - 1) >> 8):
-        low ^= 0xFF
-    return (index & ~0xFF) | low
-
-def _transform_byte(value: int) -> int:
-    return ((value >> 4) | ((value & 0x0F) << 4)) ^ 0xFF
-
-def decrypt_enca(source: bytes) -> bytes:
-    if not source.startswith(MAGIC) or INVERSE_TABLE is None:
-        return source
-    size = len(source) - len(MAGIC)
-    if size == 0:
-        return b""
-    plain = bytearray(size)
-    for source_index, value in enumerate(source[len(MAGIC):]):
-        plain[_calc_index(size - 1 - source_index, size)] = _transform_byte(INVERSE_TABLE[value])
-    return bytes(plain)
 
 
 def load_databases():
@@ -104,23 +60,24 @@ def load_databases():
             print(f"Warning: database file not found: {path}")
             gamedata[key] = {}
 
+
 def find_local_asset(category, image_id, prefix="img"):
     """
-    Search local-input resources for an asset by its ImageID.
+    Search pre-extracted assets for an asset by its ImageID.
     Supports zero-padding for single-digit IDs.
     """
-    directory = os.path.join(LOCAL_INPUT_DIR, category)
+    directory = os.path.join(EXTRACTED_DIR, category)
     if not os.path.exists(directory):
         return None
     
     id_str_padded = f"{image_id:02d}" if image_id < 10 else str(image_id)
-    suffix_padded = f"{prefix}_{id_str_padded}.bin"
-    suffix_normal = f"{prefix}_{image_id}.bin"
+    suffix_padded = f"{prefix}_{id_str_padded}.png"
+    suffix_normal = f"{prefix}_{image_id}.png"
     
     try:
         for f in os.listdir(directory):
             if f.endswith(suffix_padded) or f.endswith(suffix_normal):
-                return f"{LOCAL_INPUT_DIR}/{category}/{f}".replace("\\", "/")
+                return f"{EXTRACTED_DIR}/{category}/{f}".replace("\\", "/")
     except Exception:
         pass
     return None
@@ -282,30 +239,30 @@ def get_strings():
 
 @app.get('/api/audio')
 def get_audio_list():
-    """Scan local-input directories and return lists of BGM and SE files."""
+    """Scan extracted-gamedata directories and return lists of pre-extracted BGM and SE files."""
     audio_data = {"BGM": [], "SE": []}
     
     for category in ["BGM", "SE"]:
-        directory = os.path.join(LOCAL_INPUT_DIR, category)
+        directory = os.path.join(EXTRACTED_DIR, category)
         if os.path.exists(directory):
             try:
                 for f in os.listdir(directory):
-                    if f.endswith(".bin"):
+                    if f.endswith(".wav"):
                         path = os.path.join(directory, f)
                         size = os.path.getsize(path)
                         # Extract BGM number/name for clean displaying
                         display_name = f
                         if category == "BGM":
-                            # e.g., '03169150b52c2106408ff78547884d5cbgm38.bin' -> 'bgm38'
+                            # e.g., '03169150b52c2106408ff78547884d5cbgm38.wav' -> 'bgm38'
                             display_name = f[32:-4] if len(f) > 36 else f[:-4]
                         else:
-                            # e.g., '0153ab1af6c8c377b4133da016f89866homing_ice.bin' -> 'homing_ice'
+                            # e.g., '0153ab1af6c8c377b4133da016f89866homing_ice.wav' -> 'homing_ice'
                             display_name = f[32:-4] if len(f) > 36 else f[:-4]
                         
                         audio_data[category].append({
                             "filename": f,
                             "name": display_name,
-                            "path": f"{LOCAL_INPUT_DIR}/{category}/{f}".replace("\\", "/"),
+                            "path": f"{EXTRACTED_DIR}/{category}/{f}".replace("\\", "/"),
                             "size_bytes": size
                         })
                 # Sort alphabetically by name
@@ -315,39 +272,22 @@ def get_audio_list():
                 
     return audio_data
 
+
 @app.get('/api/play/{category}/{filename}')
 def play_audio(category: str, filename: str):
     """
-    On-the-fly audio extraction endpoint.
-    Loads the UnityFS file, extracts the AudioClip WAV data, and streams it.
+    Serve the pre-extracted WAV audio file directly.
     """
     category = category.upper()
     if category not in ["BGM", "SE"]:
         return Response(content="Invalid category", status_code=400)
         
-    path = os.path.join(LOCAL_INPUT_DIR, category, filename)
+    safe_filename = os.path.basename(filename)
+    path = os.path.join(EXTRACTED_DIR, category, safe_filename)
     if not os.path.exists(path):
         return Response(content="Audio file not found", status_code=404)
         
-    try:
-        import UnityPy
-        env = UnityPy.load(path)
-        clips = [obj.read() for obj in env.objects if obj.type.name == 'AudioClip']
-        if not clips:
-            return Response(content="No AudioClip found inside asset bundle", status_code=404)
-            
-        clip = clips[0]
-        # clip.samples is a dict of {wav_filename: bytes}
-        if not clip.samples:
-            return Response(content="Audio data samples empty", status_code=404)
-            
-        wav_name = next(iter(clip.samples.keys()))
-        wav_bytes = clip.samples[wav_name]
-        
-        return Response(content=wav_bytes, media_type="audio/wav")
-    except Exception as e:
-        print(f"Error extracting audio: {e}")
-        return Response(content=f"Audio extraction error: {e}", status_code=500)
+    return FileResponse(path, media_type="audio/wav")
 
 @app.get('/api/assets')
 def get_assets_inventory():
@@ -390,46 +330,18 @@ def get_assets_inventory():
 @app.get('/api/assets/image')
 def serve_image(path: str):
     """
-    On-the-fly decryption and image extraction endpoint for Illust, Pieces, etc.
+    Serve pre-extracted images from user-data/extracted-gamedata.
     """
     normalized_path = os.path.normpath(path).replace("\\", "/")
     
-    # Validation to prevent path traversal outside local-input
-    if not (normalized_path.startswith("local-input/resources/data_u2017/android/") or 
-            normalized_path.startswith("local-input/resources/data/")):
+    # Validation to prevent path traversal outside user-data/extracted-gamedata
+    if not normalized_path.startswith("user-data/extracted-gamedata/"):
         raise HTTPException(status_code=403, detail="Access denied")
         
     if not os.path.exists(normalized_path):
         raise HTTPException(status_code=404, detail="File not found")
         
-    try:
-        with open(normalized_path, "rb") as f:
-            file_bytes = f.read()
-            
-        # Decrypt if encrypted with ENCA
-        decrypted_bytes = decrypt_enca(file_bytes)
-        
-        # Load with UnityPy
-        import UnityPy
-        env = UnityPy.load(decrypted_bytes)
-        
-        # Find first Texture2D or Sprite
-        for obj in env.objects:
-            if obj.type.name in ('Texture2D', 'Sprite'):
-                data = obj.read()
-                img = data.image
-                
-                # Stream as PNG
-                buf = io.BytesIO()
-                img.save(buf, format="PNG")
-                png_bytes = buf.getvalue()
-                
-                return Response(content=png_bytes, media_type="image/png")
-                
-        raise HTTPException(status_code=404, detail="No image asset found in bundle")
-    except Exception as e:
-        print(f"Error serving image asset {path}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    return FileResponse(normalized_path, media_type="image/png")
 
 # Web App Page Router
 @app.get('/')
