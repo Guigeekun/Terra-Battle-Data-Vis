@@ -25,14 +25,13 @@ const state = {
 
 // Character Rarity Map (ID -> String)
 const rarityLabels = {
-    1: 'D Class',
-    2: 'C Class',
-    3: 'B Class',
-    4: 'A Class',
-    5: 'S Class',
-    6: 'SS Class',
-    7: 'Z Class',
-    8: 'Λ Class'
+    2: 'D Class',
+    3: 'C Class',
+    4: 'B Class',
+    5: 'A Class',
+    6: 'S Class',
+    7: 'SS Class',
+    8: 'Z Class'
 };
 
 // Species translations helper
@@ -42,6 +41,49 @@ const speciesTranslations = {
     2: { en: 'Beastfolk', ja: 'ケモノ', fr: 'Sauvage', de: 'Biestvolk', es: 'Bestia', zh_tw: '獸人族' },
     3: { en: 'Stonefolk', ja: '岩人', fr: 'Rocheux', de: 'Steinvolk', es: 'Pétreo', zh_tw: '岩人族' }
 };
+
+// Weapons metadata & SVG Icons
+const weaponMeta = {
+    0: { name: 'Staff', color: '#c084fc', svg: `<img src="/api/assets/image?path=user-data/extracted-gamedata/ui_icons/icon_wand_02.png" alt="Staff" style="width: 14px; height: 14px; object-fit: contain; vertical-align: middle; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">` },
+    1: { name: 'Sword', color: '#f87171', svg: `<img src="/api/assets/image?path=user-data/extracted-gamedata/ui_icons/icon_sword_02.png" alt="Sword" style="width: 14px; height: 14px; object-fit: contain; vertical-align: middle; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">` },
+    2: { name: 'Spear', color: '#60a5fa', svg: `<img src="/api/assets/image?path=user-data/extracted-gamedata/ui_icons/icon_spear_02.png" alt="Spear" style="width: 14px; height: 14px; object-fit: contain; vertical-align: middle; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">` },
+    3: { name: 'Bow', color: '#34d399', svg: `<img src="/api/assets/image?path=user-data/extracted-gamedata/ui_icons/icon_bow_02.png" alt="Bow" style="width: 14px; height: 14px; object-fit: contain; vertical-align: middle; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">` },
+    4: { name: 'None', color: '#9ca3af', svg: `<img src="/api/assets/image?path=user-data/extracted-gamedata/ui_icons/icon_other_02.png" alt="None" style="width: 14px; height: 14px; object-fit: contain; vertical-align: middle; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">` }
+};
+
+// Elements metadata & SVG Icons
+const elementMeta = {
+    0: { name: 'None', color: '#6b7280', svg: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;"><circle cx="12" cy="12" r="8" stroke-dasharray="2 2"></circle></svg>` },
+    1: { name: 'Fire', color: '#fb923c', svg: `<img src="/api/assets/image?path=user-data/extracted-gamedata/element_icons/icon_m_fire.png" alt="Fire" style="width: 14px; height: 14px; object-fit: contain; vertical-align: middle; border-radius: 50%; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">` },
+    2: { name: 'Ice', color: '#38bdf8', svg: `<img src="/api/assets/image?path=user-data/extracted-gamedata/element_icons/icon_m_ice.png" alt="Ice" style="width: 14px; height: 14px; object-fit: contain; vertical-align: middle; border-radius: 50%; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">` },
+    3: { name: 'Lightning', color: '#fde047', svg: `<img src="/api/assets/image?path=user-data/extracted-gamedata/element_icons/icon_m_thunder.png" alt="Lightning" style="width: 14px; height: 14px; object-fit: contain; vertical-align: middle; border-radius: 50%; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">` },
+    4: { name: 'Darkness', color: '#c084fc', svg: `<img src="/api/assets/image?path=user-data/extracted-gamedata/element_icons/icon_m_darkness.png" alt="Darkness" style="width: 14px; height: 14px; object-fit: contain; vertical-align: middle; border-radius: 50%; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">` },
+    5: { name: 'Healing', color: '#22c55e', svg: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;"><path d="M12 5v14M5 12h14" stroke="#22c55e" stroke-width="3"></path></svg>` },
+    6: { name: 'Remedy', color: '#06b6d4', svg: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;"><rect x="5" y="9" width="14" height="10" rx="2"></rect><path d="M9 9V5a2 2 0 0 1 4 0v4"></path><circle cx="12" cy="14" r="2" fill="currentColor"></circle></svg>` },
+    17: { name: 'Photon', color: '#fbbf24', svg: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;"><circle cx="12" cy="12" r="5" fill="currentColor"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l1.5 1.5M17.5 17.5l1.5 1.5M5 19l1.5-1.5M17.5 6.5l1.5-1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>` },
+    18: { name: 'Graviton', color: '#818cf8', svg: `<img src="/api/assets/image?path=user-data/extracted-gamedata/ui_icons/gravity.png" alt="Graviton" style="width: 14px; height: 14px; object-fit: contain; vertical-align: middle; border-radius: 50%; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">` },
+    21: { name: 'Solar', color: '#fda4af', svg: `<img src="/api/assets/image?path=user-data/extracted-gamedata/ui_icons/sun_02.png" alt="Solar" style="width: 14px; height: 14px; object-fit: contain; vertical-align: middle; border-radius: 50%; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">` },
+    22: { name: 'Lunar', color: '#e9d5ff', svg: `<img src="/api/assets/image?path=user-data/extracted-gamedata/ui_icons/moon_01.png" alt="Lunar" style="width: 14px; height: 14px; object-fit: contain; vertical-align: middle; border-radius: 50%; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">` }
+};
+
+// Generate job weapon/element mini badges HTML
+function getJobBadgesHtml(job) {
+    if (!job) return '';
+    const weap = weaponMeta[job.Attrib] || weaponMeta[4];
+    const elem = elementMeta[job.SkillAttrib] || elementMeta[0];
+
+    return `
+        <div class="job-mini-badge" style="display: flex; align-items: center; gap: 4px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 6px; font-size: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);" title="Job Name: ${job.name || 'Unnamed'}&#10;Weapon: ${weap.name}&#10;Element: ${elem.name}">
+            <span style="color: ${weap.color}; display: flex; align-items: center;">
+                ${weap.svg}
+            </span>
+            <span style="color: var(--text-muted); font-size: 8px; opacity: 0.5; font-weight: normal; margin: 0 1px;">|</span>
+            <span style="color: ${elem.color}; display: flex; align-items: center;">
+                ${elem.svg}
+            </span>
+        </div>
+    `;
+}
 
 // Document Elements
 const els = {
@@ -71,6 +113,8 @@ const els = {
     // Select Filters
     charSpeciesFilter: document.getElementById('char-filter-species'),
     charRarityFilter: document.getElementById('char-filter-rarity'),
+    charWeaponFilter: document.getElementById('char-filter-weapon'),
+    charElementFilter: document.getElementById('char-filter-element'),
     buddyRarityFilter: document.getElementById('buddy-filter-rarity'),
     assetCategoryFilter: document.getElementById('asset-filter-category'),
     assetSignatureFilter: document.getElementById('asset-filter-signature'),
@@ -105,7 +149,6 @@ const els = {
     modalCharName: document.getElementById('modal-char-name'),
     modalCharGender: document.getElementById('modal-char-gender'),
     modalCharRarity: document.getElementById('modal-char-rarity'),
-    modalCharChapter: document.getElementById('modal-char-chapter'),
     modalJobProfile: document.getElementById('modal-job-profile'),
     modalJobPiecePath: document.getElementById('modal-job-piece-path'),
     modalJobIllustPath: document.getElementById('modal-job-illust-path'),
@@ -120,6 +163,7 @@ const els = {
     modalJobMATK: document.getElementById('modal-job-matk'),
     modalJobMDEF: document.getElementById('modal-job-mdef'),
     modalJobSkillsList: document.getElementById('modal-job-skills-list'),
+    modalJobAttributes: document.getElementById('modal-job-attributes'),
     modalTabJob1: document.getElementById('modal-tab-job1'),
     modalTabJob2: document.getElementById('modal-tab-job2'),
     modalTabJob3: document.getElementById('modal-tab-job3')
@@ -211,6 +255,8 @@ function registerEventListeners() {
     els.charSearch.addEventListener('input', renderCharacters);
     els.charSpeciesFilter.addEventListener('change', renderCharacters);
     els.charRarityFilter.addEventListener('change', renderCharacters);
+    els.charWeaponFilter.addEventListener('change', renderCharacters);
+    els.charElementFilter.addEventListener('change', renderCharacters);
 
     els.buddySearch.addEventListener('input', renderBuddies);
     els.buddyRarityFilter.addEventListener('change', renderBuddies);
@@ -387,13 +433,19 @@ function renderCharacters() {
     const query = els.charSearch.value.toLowerCase();
     const species = els.charSpeciesFilter.value;
     const rarity = els.charRarityFilter.value;
+    const weapon = els.charWeaponFilter.value;
+    const element = els.charElementFilter.value;
 
     els.charactersGrid.innerHTML = '';
 
     const filtered = state.characters.filter(char => {
-        // Match Search Query
+        // Match Search Query (matches local Name, ID, or job profiles)
         const nameMatches = getLocalizedString(char.NameString).toLowerCase().includes(query) ||
-            (char.ID && char.ID.toString().includes(query));
+            (char.ID && char.ID.toString().includes(query)) ||
+            (char.JobsInfo && char.JobsInfo.some(job => 
+                (job.name && job.name.toLowerCase().includes(query)) ||
+                (job.ProfileString && getLocalizedString(job.ProfileString).toLowerCase().includes(query))
+            ));
 
         // Match Species Filter
         const speciesMatches = species === '' || char.Species == species;
@@ -401,7 +453,13 @@ function renderCharacters() {
         // Match Rarity Filter
         const rarityMatches = rarity === '' || char.rarity == rarity;
 
-        return nameMatches && speciesMatches && rarityMatches;
+        // Match Weapon Filter (matches if any of the character's jobs uses this weapon)
+        const weaponMatches = weapon === '' || (char.JobsInfo && char.JobsInfo.some(job => job.Attrib == weapon));
+
+        // Match Element Filter (matches if any of the character's jobs has this element)
+        const elementMatches = element === '' || (char.JobsInfo && char.JobsInfo.some(job => job.SkillAttrib == element));
+
+        return nameMatches && speciesMatches && rarityMatches && weaponMatches && elementMatches;
     });
 
     if (filtered.length === 0) {
@@ -422,15 +480,18 @@ function renderCharacters() {
             `</div>` :
             `<div class="card-image-placeholder"><i class="fa-solid fa-user-shield"></i></div>`;
 
+        const jobsHtml = char.JobsInfo && char.JobsInfo.length > 0 ?
+            `<div class="card-jobs-row" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">` +
+            char.JobsInfo.map(job => getJobBadgesHtml(job)).join('') +
+            `</div>` : '';
+
         card.innerHTML = `
             <span class="card-badge badge-rarity">${rarityLabels[char.rarity] || 'Class ' + char.rarity}</span>
             ${cardImageHtml}
             <h4 class="card-name">${getLocalizedString(char.NameString)}</h4>
             <div class="card-meta"><span><i class="fa-solid fa-circle-nodes"></i> ID: ${char.ID}</span>
             </div>
-            <div class="card-details-row">
-                <span>Jobs Unlocked: ${char.JobsInfo ? char.JobsInfo.length : 0}</span>
-            </div>
+            ${jobsHtml}
         `;
         card.addEventListener('click', () => openCharacterModal(char));
         els.charactersGrid.appendChild(card);
@@ -988,7 +1049,6 @@ function openCharacterModal(char) {
     els.modalCharName.textContent = getLocalizedString(char.NameString);
     els.modalCharGender.innerHTML = `<i class="fa-solid fa-venus-mars"></i> Gender: ${char.Gender === 1 ? 'Male' : (char.Gender === 2 ? 'Female' : 'Unknown')}`;
     els.modalCharRarity.innerHTML = `<i class="fa-solid fa-star"></i> Class: ${rarityLabels[char.rarity] || 'Class ' + char.rarity}`;
-    els.modalCharChapter.innerHTML = `<i class="fa-solid fa-book-open"></i> Unlock: Ch ${char.AppearChapter || '1'}`;
 
     // Check how many jobs the character has
     const jobs = char.JobsInfo || [];
@@ -1015,6 +1075,7 @@ function renderJobDetails() {
 
     if (!job) {
         els.modalJobProfile.textContent = 'Job variant details missing.';
+        if (els.modalJobAttributes) els.modalJobAttributes.innerHTML = '';
         els.modalJobPiecePath.textContent = '-';
         els.modalJobIllustPath.textContent = '-';
         els.modalJobPieceImg.classList.add('hidden');
@@ -1030,6 +1091,19 @@ function renderJobDetails() {
 
     // Set profile text and assets
     els.modalJobProfile.textContent = getLocalizedString(job.ProfileString, 'Profile description not available.');
+    if (els.modalJobAttributes) {
+        const weap = weaponMeta[job.Attrib] || weaponMeta[4];
+        const elem = elementMeta[job.SkillAttrib] || elementMeta[0];
+
+        els.modalJobAttributes.innerHTML = `
+            <span class="badge" style="background-color: rgba(255, 255, 255, 0.02); border-color: ${weap.color}44; color: ${weap.color}; display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 4px 10px; text-transform: none; font-weight: 500; border-radius: 8px;">
+                ${weap.svg} <span style="font-weight: 600;">${weap.name}</span>
+            </span>
+            <span class="badge" style="background-color: rgba(255, 255, 255, 0.02); border-color: ${elem.color}44; color: ${elem.color}; display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 4px 10px; text-transform: none; font-weight: 500; border-radius: 8px;">
+                ${elem.svg} <span style="font-weight: 600;">${elem.name}</span>
+            </span>
+        `;
+    }
     els.modalJobPiecePath.textContent = job.piece_file || 'File Not Found in Pieces/';
     els.modalJobIllustPath.textContent = job.illust_file || 'File Not Found in Illust/';
 
@@ -1051,27 +1125,38 @@ function renderJobDetails() {
     els.modalJobHP.textContent = job.HP || 0;
     els.modalJobATK.textContent = job.ATK || 0;
     els.modalJobDEF.textContent = job.DEF || 0;
-    els.modalJobMATK.textContent = job.MATK || 0;
-    els.modalJobMDEF.textContent = job.MDEF || 0;
+    els.modalJobMATK.textContent = job.SATK || 0;
+    els.modalJobMDEF.textContent = job.SDEF || 0;
 
     // Renders skills
     els.modalJobSkillsList.innerHTML = '';
-    const skillIDs = job.Skills || [];
+    const skillIDs = job.skills || [];
+    const skillLevels = job.skillMasterLevel || [];
 
     if (skillIDs.length === 0) {
         els.modalJobSkillsList.innerHTML = '<li style="color: var(--text-muted);">No skills learned by this job.</li>';
     } else {
-        skillIDs.forEach(skillID => {
-            const skill = state.skills.find(s => s.iconNo === skillID);
+        skillIDs.forEach((skillID, index) => {
+            const skill = state.skills[skillID];
+            const unlockLv = skillLevels[index] || 1;
             const li = document.createElement('li');
+            li.style.marginBottom = '12px';
             if (skill) {
                 li.innerHTML = `
-                    <strong style="color: var(--accent-blue);">${getLocalizedString(skill.nameString)}</strong> 
-                    <span style="font-size: 11px; color: var(--text-muted); margin-left: 6px;">Trigger: ${skill.emitRatio || 0}%</span>
-                    <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px; line-height: 1.4;">${getLocalizedString(skill.descString)}</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                        <strong style="color: var(--accent-blue);">${getLocalizedString(skill.nameString)}</strong>
+                        <span class="badge" style="font-size: 10px; padding: 2px 6px; background-color: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.2); color: var(--accent-blue);">Lv ${unlockLv}</span>
+                    </div>
+                    <span style="font-size: 11px; color: var(--text-muted);">Trigger: ${skill.emitRatio || 0}%</span>
+                    <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">${getLocalizedString(skill.descString)}</p>
                 `;
             } else {
-                li.innerHTML = `<span style="color: var(--text-muted);">Unknown Skill (Icon ID: ${skillID})</span>`;
+                li.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--text-muted);">Unknown Skill (ID: ${skillID})</span>
+                        <span class="badge" style="font-size: 10px; padding: 2px 6px; background-color: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.2); color: var(--accent-red);">Lv ${unlockLv}</span>
+                    </div>
+                `;
             }
             els.modalJobSkillsList.appendChild(li);
         });
