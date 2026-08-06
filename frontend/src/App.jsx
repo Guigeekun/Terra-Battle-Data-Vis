@@ -1,0 +1,69 @@
+import { useState } from 'react';
+import { GameDataProvider, useGameData } from './contexts/GameDataContext';
+import Sidebar from './components/layout/Sidebar';
+import Header from './components/layout/Header';
+import LoadingOverlay from './components/layout/LoadingOverlay';
+
+import DashboardTab from './components/tabs/DashboardTab';
+import CharactersTab from './components/tabs/CharactersTab';
+import BuddiesTab from './components/tabs/BuddiesTab';
+import SkillsTab from './components/tabs/SkillsTab';
+import ItemsTab from './components/tabs/ItemsTab';
+import StagesTab from './components/tabs/StagesTab';
+import AudioTab from './components/tabs/AudioTab';
+import AssetsTab from './components/tabs/AssetsTab';
+
+import CharacterModal from './components/modals/CharacterModal';
+import ItemModal from './components/modals/ItemModal';
+
+function AppContent() {
+  const { loading } = useGameData();
+  const [activeTab, setActiveTab] = useState('dashboard');
+  
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const [selectedItemId, setSelectedItemId] = useState(null);
+
+  return (
+    <>
+      {loading && <LoadingOverlay />}
+      <div className="app-container">
+        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+        <main className="app-main">
+          <Header activeTab={activeTab} />
+          <div className="content-container">
+            {activeTab === 'dashboard' && <DashboardTab onTabChange={setActiveTab} />}
+            {activeTab === 'characters' && <CharactersTab onSelectCharacter={setSelectedCharacter} />}
+            {activeTab === 'buddies' && <BuddiesTab />}
+            {activeTab === 'skills' && <SkillsTab />}
+            {activeTab === 'items' && <ItemsTab onSelectItem={setSelectedItemId} />}
+            {activeTab === 'stages' && <StagesTab onSelectItem={setSelectedItemId} />}
+            {activeTab === 'audio' && <AudioTab />}
+            {activeTab === 'assets' && <AssetsTab />}
+          </div>
+        </main>
+      </div>
+
+      {selectedCharacter && (
+        <CharacterModal 
+          character={selectedCharacter} 
+          onClose={() => setSelectedCharacter(null)} 
+          onOpenItem={(id) => setSelectedItemId(id)}
+        />
+      )}
+      {selectedItemId && (
+        <ItemModal 
+          itemId={selectedItemId} 
+          onClose={() => setSelectedItemId(null)} 
+        />
+      )}
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <GameDataProvider>
+      <AppContent />
+    </GameDataProvider>
+  );
+}

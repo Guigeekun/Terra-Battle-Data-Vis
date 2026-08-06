@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Response, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 import io
@@ -21,8 +22,18 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# Mount static folder
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount static folders
+
+os.makedirs("frontend/dist/assets", exist_ok=True)
+app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
 
 # Paths
 DATA_DIR = os.path.join("user-data", "extracted-gamedata", "game_data")
@@ -520,8 +531,10 @@ def get_item_details(item_id: int):
 # Web App Page Router
 @app.get('/')
 def index_page():
-    """Serve the visualizer single-page application dashboard."""
-    return FileResponse('templates/index.html')
+    """Serve the React single-page application."""
+    if os.path.exists('frontend/dist/index.html'):
+        return FileResponse('frontend/dist/index.html')
+    return HTMLResponse("React frontend not found. Please run 'npm run build' in the 'frontend' directory.", status_code=404)
 
 def open_browser():
     """Open user's default browser to local server port."""
