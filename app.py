@@ -93,6 +93,9 @@ def get_characters():
     # Index jobs by ID
     jobs_by_id = {job["ID"]: job for job in jobs_data}
     
+    item_db = gamedata.get("items", {})
+    item_set = item_db.get("itemSet", [])
+    
     result = []
     for info in infos:
         char_jobs = []
@@ -107,6 +110,32 @@ def get_characters():
                 job_copy = dict(job)
                 job_copy["piece_file"] = piece_path
                 job_copy["illust_file"] = illust_path
+                
+                # Extract and parse unlock materials
+                unlock_materials = []
+                for item_entry in job.get("items", []):
+                    code = item_entry.get("code", 0)
+                    if code > 0:
+                        item_id = code // 256
+                        count = code % 256
+                        idx = item_id - 1
+                        if 0 <= idx < len(item_set):
+                            item = item_set[idx]
+                            unlock_materials.append({
+                                "item_id": item_id,
+                                "count": count,
+                                "name": item.get("NameString", {}),
+                                "icon_url": f"/api/assets/item/item_{item_id:02d}.png"
+                            })
+                        else:
+                            unlock_materials.append({
+                                "item_id": item_id,
+                                "count": count,
+                                "name": {"en": f"Unknown Item (ID {item_id})"},
+                                "icon_url": None
+                            })
+                job_copy["unlock_materials"] = unlock_materials
+                job_copy["unlock_coin"] = job.get("COIN", 0)
                 char_jobs.append(job_copy)
         
         char_copy = dict(info)
@@ -342,6 +371,151 @@ def serve_image(path: str):
         raise HTTPException(status_code=404, detail="File not found")
         
     return FileResponse(normalized_path, media_type="image/png")
+
+@app.get('/api/item/{item_id}')
+def get_item_details(item_id: int):
+    """Retrieve details for a specific item, including obtain sources (loot) and usage requirements."""
+    item_db = gamedata.get("items", {})
+    item_set = item_db.get("itemSet", [])
+    
+    idx = item_id - 1
+    if idx < 0 or idx >= len(item_set):
+        raise HTTPException(status_code=404, detail="Item not found")
+        
+    item = item_set[idx]
+    
+    # 1. Used For: Character Job Unlocks
+    used_in_jobs = []
+    char_db = gamedata.get("characters", {})
+    char_infos = char_db.get("infos", [])
+    jobs_data = char_db.get("data", [])
+    jobs_by_id = {job["ID"]: job for job in jobs_data}
+    
+    for char in char_infos:
+        for job_id in char.get("Jobs", []):
+            job = jobs_by_id.get(job_id)
+            if job:
+                for item_entry in job.get("items", []):
+                    code = item_entry.get("code", 0)
+                    if code > 0 and (code // 256) == item_id:
+                        count = code % 256
+                        used_in_jobs.append({
+                            "character_id": char["ID"],
+                            "character_name": char["NameString"],
+                            "job_name": job["NameString"],
+                            "count": count
+                        })
+                        
+    # 2. Used For: Rebirth/Reconstruction
+    used_in_rebirth = []
+    rebirth_infos = char_db.get("rebirthInfo", [])
+    char_infos_by_id = {c["ID"]: c for c in char_infos}
+    
+    for rb in rebirth_infos:
+        for item_entry in rb.get("items", []):
+            code = item_entry.get("code", 0)
+            if code > 0 and (code // 256) == item_id:
+                count = code % 256
+                src_char = char_infos_by_id.get(rb.get("srcChrID", 0))
+                dst_char = char_infos_by_id.get(rb.get("dstChrID", 0))
+                used_in_rebirth.append({
+                    "src_character_id": rb.get("srcChrID"),
+                    "src_character_name": src_char["NameString"] if src_char else None,
+                    "dst_character_id": rb.get("dstChrID"),
+                    "dst_character_name": dst_char["NameString"] if dst_char else None,
+                    "count": count
+                })
+                
+    # 3. Used For: Buddy Evolution
+    used_in_buddies = []
+    buddy_db = gamedata.get("buddies", {})
+    buddy_data = buddy_db.get("data", [])
+    
+    for buddy in buddy_data:
+        for item_entry in buddy.get("items", []):
+            code = item_entry.get("code", 0)
+            if code > 0 and (code // 256) == item_id:
+                count = code % 256
+                used_in_buddies.append({
+                    "buddy_id": buddy.get("ID"),
+                    "buddy_name": buddy.get("NameString"),
+                    "count": count
+                })
+                
+    # 4. Where to Obtain: Enemy Drops
+    dropped_by_enemies = []
+    enemy_db = gamedata.get("enemies", {})
+    enemy_data = enemy_db.get("data", [])
+    
+    enemy_id_to_drops = {}
+    for enemy in enemy_data:
+        for item_entry in enemy.get("items", []):
+            code = item_entry.get("code", 0)
+            if code > 0 and (code // 256) == item_id:
+                rate = code % 256
+                enemy_id_to_drops[enemy["ID"]] = rate
+                dropped_by_enemies.append({
+                    "enemy_id": enemy["ID"],
+                    "enemy_name": enemy.get("NameString"),
+                    "rate": rate
+                })
+                
+    # 5. Where to Obtain: Stages/Chapters
+    dropped_in_stages = []
+    stages_db = gamedata.get("stages", {})
+    chapters = stages_db.get("chapters", [])
+    layout_db = gamedata.get("stages_layout", {})
+    enemies_by_id = {e["ID"]: e for e in enemy_data}
+    
+    for ch in chapters:
+        chapter_no = str(ch.get("chapterNo", ""))
+        ch_layout = layout_db.get(chapter_no, {})
+        
+        for s_idx, sec in enumerate(ch.get("sections", [])):
+            sec_id = str(s_idx + 1)
+            sec_layout = ch_layout.get(sec_id)
+            
+            is_section_drop = (sec.get("itemID") == item_id)
+            section_drop_count = sec.get("itemCount", 0) if is_section_drop else 0
+            
+            spawning_enemies = {}
+            if sec_layout:
+                for wave in sec_layout:
+                    for enemy in wave.get("enemies", []):
+                        eid = enemy.get("enemy_id")
+                        if eid in enemy_id_to_drops:
+                            spawning_enemies[eid] = enemy_id_to_drops[eid]
+            
+            if is_section_drop or spawning_enemies:
+                dropped_in_stages.append({
+                    "chapter_no": ch.get("chapterNo"),
+                    "section_index": s_idx + 1,
+                    "section_title": sec.get("title"),
+                    "is_section_drop": is_section_drop,
+                    "section_drop_count": section_drop_count,
+                    "spawning_enemies": [
+                        {
+                            "enemy_id": eid,
+                            "enemy_name": enemies_by_id[eid].get("NameString") if eid in enemies_by_id else None,
+                            "rate": rate
+                        } for eid, rate in spawning_enemies.items()
+                    ]
+                })
+                
+    dropped_in_stages.sort(key=lambda x: (x["chapter_no"], x["section_index"]))
+    
+    return {
+        "item_id": item_id,
+        "name": item.get("NameString"),
+        "desc": item.get("DescString"),
+        "sort_order": item.get("sortOrder"),
+        "icon_url": f"/api/assets/item/item_{item_id:02d}.png",
+        "dropped_by_enemies": dropped_by_enemies,
+        "dropped_in_stages": dropped_in_stages,
+        "used_in_jobs": used_in_jobs,
+        "used_in_rebirth": used_in_rebirth,
+        "used_in_buddies": used_in_buddies
+    }
 
 # Web App Page Router
 @app.get('/')

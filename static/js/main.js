@@ -166,7 +166,18 @@ const els = {
     modalJobAttributes: document.getElementById('modal-job-attributes'),
     modalTabJob1: document.getElementById('modal-tab-job1'),
     modalTabJob2: document.getElementById('modal-tab-job2'),
-    modalTabJob3: document.getElementById('modal-tab-job3')
+    modalTabJob3: document.getElementById('modal-tab-job3'),
+    modalJobUnlockBox: document.getElementById('modal-job-unlock-box'),
+    modalJobUnlockCoinRow: document.getElementById('modal-job-unlock-coin-row'),
+    modalJobUnlockCoin: document.getElementById('modal-job-unlock-coin'),
+    modalJobUnlockMaterialsList: document.getElementById('modal-job-unlock-materials-list'),
+    itemModal: document.getElementById('item-modal'),
+    itemModalClose: document.getElementById('item-modal-close'),
+    modalItemImg: document.getElementById('modal-item-img'),
+    modalItemName: document.getElementById('modal-item-name'),
+    modalItemDesc: document.getElementById('modal-item-desc'),
+    modalItemObtainingList: document.getElementById('modal-item-obtaining-list'),
+    modalItemUsesList: document.getElementById('modal-item-uses-list')
 };
 
 // Initial App Bootstrapping
@@ -217,6 +228,11 @@ function registerEventListeners() {
     els.modalCloseBtn.addEventListener('click', closeModal);
     els.charModal.addEventListener('click', (e) => {
         if (e.target === els.charModal) closeModal();
+    });
+
+    els.itemModalClose.addEventListener('click', closeItemModal);
+    els.itemModal.addEventListener('click', (e) => {
+        if (e.target === els.itemModal) closeItemModal();
     });
 
     // Lightbox Image Preview Events
@@ -639,6 +655,7 @@ function renderItems() {
                 <span>Sort: ${item.sortOrder || 0}</span>
             </div>
         `;
+        card.addEventListener('click', () => openItemModal(itemIndex + 1));
         els.itemsGrid.appendChild(card);
     });
 }
@@ -1085,6 +1102,8 @@ function renderJobDetails() {
         els.modalJobDEF.textContent = '-';
         els.modalJobMATK.textContent = '-';
         els.modalJobMDEF.textContent = '-';
+        if (els.modalJobUnlockBox) els.modalJobUnlockBox.classList.add('hidden');
+        if (els.modalJobUnlockMaterialsList) els.modalJobUnlockMaterialsList.innerHTML = '';
         els.modalJobSkillsList.innerHTML = '';
         return;
     }
@@ -1128,6 +1147,63 @@ function renderJobDetails() {
     els.modalJobMATK.textContent = job.SATK || 0;
     els.modalJobMDEF.textContent = job.SDEF || 0;
 
+    // Render unlock materials
+    if (state.selectedJobIndex > 0) {
+        let hasUnlockRequirements = false;
+        
+        // Handle Coin Cost
+        const coinCost = job.unlock_coin || 0;
+        if (coinCost > 0) {
+            els.modalJobUnlockCoin.textContent = coinCost.toLocaleString();
+            els.modalJobUnlockCoinRow.classList.remove('hidden');
+            hasUnlockRequirements = true;
+        } else {
+            els.modalJobUnlockCoinRow.classList.add('hidden');
+        }
+        
+        // Handle Materials
+        els.modalJobUnlockMaterialsList.innerHTML = '';
+        const materials = job.unlock_materials || [];
+        if (materials.length > 0) {
+            materials.forEach(mat => {
+                const li = document.createElement('li');
+                li.style.display = 'flex';
+                li.style.alignItems = 'center';
+                li.style.justifyContent = 'space-between';
+                li.style.padding = '8px 0';
+                li.style.borderBottom = '1px solid var(--border-color)';
+                li.style.cursor = 'pointer';
+                li.title = "Click to view item details & drop locations";
+                li.addEventListener('click', () => {
+                    closeModal();
+                    openItemModal(mat.item_id);
+                });
+                
+                const nameStr = getLocalizedString(mat.name);
+                const imgHtml = mat.icon_url ? 
+                    `<img src="${mat.icon_url}" alt="${nameStr}" style="width: 24px; height: 24px; object-fit: contain; image-rendering: pixelated; margin-right: 8px; border-radius: 4px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);" />` : '';
+                
+                li.innerHTML = `
+                    <div style="display: flex; align-items: center;">
+                        ${imgHtml}
+                        <span>${nameStr}</span>
+                    </div>
+                    <span style="font-weight: 600; color: var(--accent-blue);">x ${mat.count}</span>
+                `;
+                els.modalJobUnlockMaterialsList.appendChild(li);
+            });
+            hasUnlockRequirements = true;
+        }
+        
+        if (hasUnlockRequirements) {
+            els.modalJobUnlockBox.classList.remove('hidden');
+        } else {
+            els.modalJobUnlockBox.classList.add('hidden');
+        }
+    } else {
+        els.modalJobUnlockBox.classList.add('hidden');
+    }
+
     // Renders skills
     els.modalJobSkillsList.innerHTML = '';
     const skillIDs = job.skills || [];
@@ -1166,4 +1242,147 @@ function renderJobDetails() {
 function closeModal() {
     els.charModal.classList.add('hidden');
     state.selectedCharacter = null;
+}
+
+async function openItemModal(itemId) {
+    try {
+        const res = await fetch(`/api/item/${itemId}`);
+        const data = await res.json();
+        
+        // Populate basic info
+        els.modalItemName.textContent = getLocalizedString(data.name);
+        els.modalItemDesc.textContent = getLocalizedString(data.desc, 'No description available.');
+        
+        if (data.icon_url) {
+            els.modalItemImg.src = data.icon_url;
+            els.modalItemImg.style.display = 'block';
+        } else {
+            els.modalItemImg.style.display = 'none';
+        }
+        
+        // 1. Populate Obtaining List
+        els.modalItemObtainingList.innerHTML = '';
+        
+        const stages = data.dropped_in_stages || [];
+        if (stages.length === 0) {
+            els.modalItemObtainingList.innerHTML = '<li style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;">No obtaining sources found in main stages.</li>';
+        } else {
+            stages.forEach(st => {
+                const li = document.createElement('li');
+                li.style.padding = '10px 0';
+                li.style.borderBottom = '1px solid var(--border-color)';
+                
+                const translatedTitle = translateStageTitle(st.section_title);
+                
+                let detailsHtml = '';
+                if (st.is_section_drop) {
+                    detailsHtml += `<span class="badge" style="background-color: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.2); color: #22c55e; font-size: 10px; margin-top: 4px;">Section Reward x${st.section_drop_count}</span>`;
+                }
+                
+                if (st.spawning_enemies && st.spawning_enemies.length > 0) {
+                    const enemiesHtml = st.spawning_enemies.map(enemy => {
+                        const name = getLocalizedString(enemy.enemy_name, 'Unknown Enemy');
+                        return `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; display: flex; justify-content: space-between;">
+                            <span><i class="fa-solid fa-skull" style="margin-right: 6px; font-size: 11px;"></i>${name}</span>
+                            <span style="color: var(--accent-pink); font-weight: 500;">Chance: ${enemy.rate}%</span>
+                        </div>`;
+                    }).join('');
+                    detailsHtml += `<div style="margin-top: 4px; padding-left: 8px; border-left: 2px solid rgba(255,255,255,0.05);">${enemiesHtml}</div>`;
+                }
+                
+                li.innerHTML = `
+                    <div style="font-weight: 600; color: var(--text-primary); display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                        <span>Chapter ${st.chapter_no} - Section ${st.section_index}</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${translatedTitle}</div>
+                    ${detailsHtml}
+                `;
+                els.modalItemObtainingList.appendChild(li);
+            });
+        }
+        
+        // 2. Populate Uses List
+        els.modalItemUsesList.innerHTML = '';
+        let hasUses = false;
+        
+        // Character Job Unlocks
+        const jobs = data.used_in_jobs || [];
+        if (jobs.length > 0) {
+            jobs.forEach(job => {
+                const li = document.createElement('li');
+                li.style.padding = '10px 0';
+                li.style.borderBottom = '1px solid var(--border-color)';
+                li.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                        <div>
+                            <strong style="color: var(--accent-blue);">${getLocalizedString(job.character_name)}</strong>
+                            <span style="color: var(--text-muted); margin: 0 4px;">&gt;</span>
+                            <span style="color: var(--text-secondary); font-size: 12px;">${getLocalizedString(job.job_name)}</span>
+                        </div>
+                        <span style="font-weight: 600; color: var(--accent-indigo);">x ${job.count}</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Job Unlock Requirement</div>
+                `;
+                els.modalItemUsesList.appendChild(li);
+            });
+            hasUses = true;
+        }
+        
+        // Character Rebirth
+        const rebirths = data.used_in_rebirth || [];
+        if (rebirths.length > 0) {
+            rebirths.forEach(rb => {
+                const li = document.createElement('li');
+                li.style.padding = '10px 0';
+                li.style.borderBottom = '1px solid var(--border-color)';
+                const srcName = getLocalizedString(rb.src_character_name, 'Unknown');
+                const dstName = getLocalizedString(rb.dst_character_name, 'Unknown');
+                li.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                        <div>
+                            <strong style="color: var(--accent-pink);">${srcName}</strong>
+                            <span style="color: var(--text-muted); margin: 0 4px;"><i class="fa-solid fa-arrow-right-long" style="font-size: 11px;"></i></span>
+                            <strong style="color: var(--accent-blue);">${dstName}</strong>
+                        </div>
+                        <span style="font-weight: 600; color: var(--accent-indigo);">x ${rb.count}</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Rebirth/Reconstruction Material</div>
+                `;
+                els.modalItemUsesList.appendChild(li);
+            });
+            hasUses = true;
+        }
+        
+        // Buddy Evolution
+        const buddies = data.used_in_buddies || [];
+        if (buddies.length > 0) {
+            buddies.forEach(buddy => {
+                const li = document.createElement('li');
+                li.style.padding = '10px 0';
+                li.style.borderBottom = '1px solid var(--border-color)';
+                li.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                        <strong style="color: var(--accent-amber);">${getLocalizedString(buddy.buddy_name)}</strong>
+                        <span style="font-weight: 600; color: var(--accent-indigo);">x ${buddy.count}</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Companion (Buddy) Evolution</div>
+                `;
+                els.modalItemUsesList.appendChild(li);
+            });
+            hasUses = true;
+        }
+        
+        if (!hasUses) {
+            els.modalItemUsesList.innerHTML = '<li style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;">This material is not used in job unlocks, rebirths, or companion evolutions.</li>';
+        }
+        
+        // Open Modal
+        els.itemModal.classList.remove('hidden');
+    } catch (e) {
+        console.error("Error opening item modal details:", e);
+    }
+}
+
+function closeItemModal() {
+    els.itemModal.classList.add('hidden');
 }

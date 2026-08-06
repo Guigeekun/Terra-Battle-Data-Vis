@@ -505,9 +505,58 @@
                             </div>
                         </div>
 
+                        <div class="job-profile-box hidden" id="modal-job-unlock-box" style="margin-bottom: 20px;">
+                            <h5>Job Unlock Requirements</h5>
+                            <div class="stats-row" id="modal-job-unlock-coin-row">
+                                <span class="stat-lbl"><i class="fa-solid fa-coins" style="color: var(--accent-amber); margin-right: 6px;"></i>Coin Cost</span>
+                                <span class="stat-val" id="modal-job-unlock-coin">-</span>
+                            </div>
+                            <ul class="job-skills-list" id="modal-job-unlock-materials-list" style="margin-top: 8px;">
+                                <!-- Populated dynamically -->
+                            </ul>
+                        </div>
+
                         <div class="job-skills-box">
                             <h5>Active Job Skills</h5>
                             <ul class="job-skills-list" id="modal-job-skills-list">
+                                <!-- Populated dynamically -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ITEM DETAIL -->
+    <div class="modal-backdrop hidden" id="item-modal">
+        <div class="modal-card" style="max-width: 700px;">
+            <button class="modal-close-btn" id="item-modal-close"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header" style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+                <div id="modal-item-img-container" style="background-color: rgba(0, 0, 0, 0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); width: 64px; height: 64px; flex-shrink: 0;">
+                    <img id="modal-item-img" src="" alt="Item Icon" style="width: 48px; height: 48px; object-fit: contain; image-rendering: pixelated;">
+                </div>
+                <div style="flex-grow: 1;">
+                    <h3 id="modal-item-name" style="margin-bottom: 4px;">Item Name</h3>
+                    <p id="modal-item-desc" style="font-size: 13px; color: var(--text-secondary); line-height: 1.4;">Item description goes here.</p>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="job-detail-layout" style="gap: 24px;">
+                    <!-- Left Column: Drop Locations -->
+                    <div class="job-info-col">
+                        <div class="job-assets-box" style="margin-bottom: 0; min-height: 250px;">
+                            <h5><i class="fa-solid fa-map-location-dot" style="margin-right: 6px; color: var(--accent-blue);"></i>Where to Obtain</h5>
+                            <ul id="modal-item-obtaining-list" class="job-skills-list" style="max-height: 300px; overflow-y: auto; margin-top: 10px;">
+                                <!-- Populated dynamically -->
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- Right Column: Uses -->
+                    <div class="job-stats-col">
+                        <div class="job-skills-box" style="margin-bottom: 0; min-height: 250px;">
+                            <h5><i class="fa-solid fa-gears" style="margin-right: 6px; color: var(--accent-indigo);"></i>What it is Used For</h5>
+                            <ul id="modal-item-uses-list" class="job-skills-list" style="max-height: 300px; overflow-y: auto; margin-top: 10px;">
                                 <!-- Populated dynamically -->
                             </ul>
                         </div>
