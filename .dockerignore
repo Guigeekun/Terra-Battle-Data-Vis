@@ -1,0 +1,15 @@
+node_modules
+frontend/node_modules
+frontend/dist
+__pycache__
+*.pyc
+.env
+.venv
+venv/
+user-data/
+local-input/
+user-output/
+scripts/
+.git
+.gitignore
+.vscode
