@@ -44,7 +44,7 @@ export default function SkillsTab() {
               <tr key={index}>
                 <td><code>{skill.iconNo || index}</code></td>
                 <td><strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}>{loc(skill.nameString, lang)}</strong></td>
-                <td>{skill.emitRatio || 0}%</td>
+                <td>{skill.emitRatio === 0 ? <span className="badge" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-green)' }}>Equip</span> : `${skill.emitRatio || 0}%`}</td>
                 <td><span className="badge" style={{ backgroundColor: 'rgba(99, 102, 241, 0.08)', borderColor: 'rgba(99, 102, 241, 0.2)', color: 'var(--accent-indigo)' }}>{skill.attrib || 'None'}</span></td>
                 <td><span className="badge" style={{ backgroundColor: 'rgba(236, 72, 153, 0.08)', borderColor: 'rgba(236, 72, 153, 0.2)', color: 'var(--accent-pink)' }}>{loc(skill.rangePrefixString, lang, 'Self')}</span></td>
                 <td style={{ maxWidth: 320, lineHeight: 1.4 }}>{loc(skill.descString, lang)}</td>

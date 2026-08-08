@@ -148,7 +148,7 @@ export default function CharacterModal({ character, onClose, onOpenItem }) {
                                   <strong style={{ color: 'var(--accent-blue)' }}>{loc(skill.nameString, lang)}</strong>
                                   <span className="badge" style={{ fontSize: 10, padding: '2px 6px', backgroundColor: 'rgba(56,189,248,0.08)', borderColor: 'rgba(56,189,248,0.2)', color: 'var(--accent-blue)' }}>Lv {unlockLv}</span>
                                 </div>
-                                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Trigger: {skill.emitRatio || 0}%</span>
+                                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Trigger: {skill.emitRatio === 0 ? 'Equip' : `${skill.emitRatio || 0}%`}</span>
                                 <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4, lineHeight: 1.4 }}>{loc(skill.descString, lang)}</p>
                               </>
                             ) : (
